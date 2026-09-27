@@ -1,0 +1,15 @@
+{
+  "id": "P88",
+  "type": "python",
+  "zone": "trusted",
+  "title": "快速反转字典",
+  "summary": "一行代码反转 dict 的键值对",
+  "usage": "d = {v: k for k, v in d.items()}\n适用于值唯一的字典",
+  "experience": "在配置映射场景中多次使用，注意值重复会丢数据",
+  "limitations": "不适用值有重复的字典",
+  "content": "二检第二次修改",
+  "experiences": [],
+  "created_at": "2026-09-23 13:23:40",
+  "updated_at": "2026-09-23 14:18:52",
+  "source": "admin"
+}

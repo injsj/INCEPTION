@@ -1,0 +1,970 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>知识库藏书阁 · 管理台</title>
+<style>
+/* ═══ 藏书阁色谱：米黄纸 + 深色木 + 黄铜 ═══ */
+:root{
+  --bg:#1b130b;            /* 深夜木底（登录罩） */
+  --wood:#2a1e11;          /* 侧栏木色 */
+  --wood2:#332615;
+  --paper:#ece1c6;         /* 米黄纸面 */
+  --paper2:#f4ecd7;        /* 卡片纸面 */
+  --line:#c3b184;          /* 纸面发丝线 */
+  --ink:#2a2013;           /* 墨色 */
+  --muted:#6e5f43;         /* 淡墨 */
+  --brass:#a5853c;         /* 黄铜 */
+  --brass2:#c6a355;
+  --danger:#8a2f22;
+  --good:#556b39;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:"Noto Serif SC","Source Han Serif SC","STSong","SimSun",serif;
+  background:var(--paper);color:var(--ink);font-size:15px;line-height:1.6;
+}
+button{
+  font-family:inherit;font-size:14px;letter-spacing:.12em;cursor:pointer;
+  background:var(--ink);color:var(--paper2);border:1px solid var(--ink);
+  padding:7px 18px;border-radius:2px;white-space:nowrap;
+}
+button:hover{background:#3d2f1c}
+button.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+button.ghost:hover{border-color:var(--ink)}
+button.good{background:var(--good);border-color:var(--good);color:#f2ecd9}
+button.danger{background:var(--danger);border-color:var(--danger);color:#f2ecd9}
+input,textarea,select{
+  font-family:inherit;font-size:14px;color:var(--ink);
+  background:#f8f2e0;border:1px solid var(--line);border-radius:2px;
+  padding:8px 10px;width:100%;
+}
+input:focus,textarea:focus,select:focus{outline:1px solid var(--brass);border-color:var(--brass)}
+textarea{min-height:74px;resize:vertical}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px;letter-spacing:.08em}
+.muted{color:var(--muted)}
+.msg{margin-top:8px;font-size:13px}
+.msg.ok{color:var(--good)}
+.msg.err{color:var(--danger)}
+table{width:100%;border-collapse:collapse}
+th{
+  text-align:left;font-weight:600;font-size:13px;letter-spacing:.15em;color:var(--muted);
+  border-bottom:2px solid var(--brass);padding:8px 10px;
+}
+td{border-bottom:1px solid var(--line);padding:9px 10px;vertical-align:middle}
+tr:hover td{background:#f0e6cd}
+.tag{font-family:"Consolas","Courier New",monospace;font-weight:700;color:var(--brass);letter-spacing:.05em}
+.pill{display:inline-block;padding:1px 10px;border:1px solid var(--line);border-radius:2px;font-size:12px;letter-spacing:.1em}
+.pill.done{border-color:var(--good);color:var(--good)}
+.pill.no{border-color:var(--danger);color:var(--danger)}
+.pill.wait{border-color:var(--brass);color:var(--brass)}
+
+/* ═══ 登录罩 ═══ */
+#login{
+  position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
+  background:
+    radial-gradient(ellipse at 50% 30%,rgba(198,163,85,.07),transparent 60%),
+    repeating-linear-gradient(90deg,rgba(0,0,0,.18) 0 2px,transparent 2px 90px),
+    var(--bg);
+}
+.lcard{width:340px;text-align:center;padding:44px 36px;background:#241a0e;border:1px solid #4a3a22;border-radius:3px}
+.lcard .brain{margin:0 auto 18px;display:block}
+.lcard h1{font-size:24px;letter-spacing:.4em;text-indent:.4em;color:#e8dcbc;font-weight:600}
+.lcard .lsub{margin:8px 0 26px;font-size:12px;letter-spacing:.3em;color:#8f7c54}
+.lcard input{background:#1b130b;border-color:#4a3a22;color:#e8dcbc;text-align:center;letter-spacing:.1em}
+.lcard input::placeholder{color:#6b5a3a}
+.lcard button{width:100%;margin-top:14px;background:var(--brass);border-color:var(--brass);color:#1b130b;font-weight:600}
+.lcard button:hover{background:var(--brass2)}
+#loginmsg{margin-top:10px}
+
+/* ═══ 主台：左木右纸 ═══ */
+#panel{display:grid;grid-template-columns:240px 1fr;height:100vh}
+#side{
+  background:
+    repeating-linear-gradient(90deg,rgba(0,0,0,.14) 0 2px,transparent 2px 70px),
+    linear-gradient(180deg,#2e2213,#221809);
+  color:#d9cba4;display:flex;flex-direction:column;border-right:1px solid #14100a;
+}
+.brand{padding:26px 22px 20px;border-bottom:1px solid #453718;text-align:center}
+.brain{display:block;margin:0 auto 10px}
+.brandname{font-size:17px;letter-spacing:.35em;text-indent:.35em;color:#e8dcbc}
+.brandsub{font-size:11px;letter-spacing:.24em;color:#8f7c54;margin-top:4px}
+nav{flex:1;padding:16px 0;overflow-y:auto}
+.nav{
+  padding:12px 22px;cursor:pointer;font-size:15px;letter-spacing:.18em;color:#cbbb90;
+  border-left:3px solid transparent;display:flex;align-items:center;gap:10px;
+}
+.nav .no{font-size:12px;color:#7d6b45;width:18px}
+.nav:hover{background:rgba(198,163,85,.08);color:#e8dcbc}
+.nav.on{border-left-color:var(--brass2);background:rgba(198,163,85,.14);color:#f0e5c4;font-weight:600}
+.nav.on .no{color:var(--brass2)}
+.badge{
+  margin-left:auto;min-width:20px;height:20px;line-height:20px;text-align:center;
+  background:var(--danger);color:#f2ecd9;font-size:12px;border-radius:2px;padding:0 5px;
+}
+.sidefoot{padding:16px 22px;border-top:1px solid #453718}
+.sidefoot button{width:100%;background:transparent;border-color:#4a3a22;color:#cbbb90}
+.sidefoot button:hover{border-color:var(--brass2);color:#e8dcbc}
+
+#main{overflow-y:auto;padding:26px 24px 60px}
+.pagehead{
+  display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
+  border-bottom:2px solid var(--brass);padding-bottom:12px;margin-bottom:20px;
+}
+.pagehead h2{font-size:24px;letter-spacing:.25em;font-weight:600}
+.pagehead .hint{font-size:13px;color:var(--muted);letter-spacing:.06em;margin-top:4px;display:block}
+.zcount{font-size:14px;color:var(--muted);letter-spacing:.1em;white-space:nowrap}
+.zcount b{font-size:30px;color:var(--brass);font-weight:600;margin-right:4px}
+
+.card{
+  background:var(--paper2);border:1px solid var(--line);border-radius:2px;
+  padding:20px 24px;margin-bottom:18px;overflow-x:auto;
+}
+.card table{min-width:620px}
+.card h3{font-size:15px;letter-spacing:.2em;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:14px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.toolbar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.toolbar input{flex:1;min-width:140px}
+.zpick{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink);border:1px solid var(--line);padding:8px 14px;border-radius:2px;cursor:pointer;background:#f8f2e0;letter-spacing:.05em;white-space:nowrap}
+.zpick:hover{border-color:var(--brass)}
+.zlist{background:var(--paper2);border:1px solid var(--line);border-radius:2px;padding:6px 18px 14px;overflow-x:auto}
+.zlist table{min-width:560px}
+.emptyrow{padding:34px 0;text-align:center;color:var(--muted);letter-spacing:.15em}
+
+/* 总览账本行 */
+.lrow{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:12px 4px;border-bottom:1px solid var(--line);cursor:pointer;
+}
+.lrow:hover{background:#efe4c8}
+.lrow .k{letter-spacing:.15em}
+.lrow .v{font-size:22px;color:var(--ink);font-weight:600}
+.lrow.hot .v{color:var(--danger)}
+.swrow{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.swrow span:first-child{letter-spacing:.12em}
+.swrow button{margin-left:auto}
+
+/* 条目管理罩（查看/编辑/移区/废弃/回滚 一处办） */
+#entryMask{
+  position:fixed;inset:0;z-index:40;background:rgba(27,19,11,.62);
+  display:flex;align-items:center;justify-content:center;
+}
+.epanel{
+  width:760px;max-width:94vw;max-height:90vh;overflow-y:auto;
+  background:var(--paper2);border:1px solid #8a774e;border-radius:2px;padding:26px 30px;
+}
+.ehead{display:flex;align-items:center;gap:14px;border-bottom:2px solid var(--brass);padding-bottom:10px;margin-bottom:8px}
+.ehead .tag{font-size:20px}
+.ehead .etitle{font-size:18px;font-weight:600;letter-spacing:.06em;flex:1}
+.efoot{display:flex;gap:10px;margin-top:16px;border-top:1px solid var(--line);padding-top:14px;flex-wrap:wrap}
+.efoot .sp{flex:1}
+
+/* 审批与 REQ */
+.keybox{
+  margin-top:14px;padding:14px 16px;border:1px solid var(--good);background:#eef0df;
+  font-family:"Consolas",monospace;font-size:14px;word-break:break-all;
+}
+.reqcard{border:1px solid var(--line);background:#fbf5e3;padding:12px 16px;margin:10px 0;border-radius:2px}
+.reqcard .body{white-space:pre-wrap;margin:8px 0;font-size:14px}
+.groupbox{border:1px solid var(--line);background:var(--paper2);margin-bottom:10px;border-radius:2px}
+.groupbox>summary{cursor:pointer;padding:10px 16px;letter-spacing:.08em}
+.groupbox .inner{padding:0 14px 10px}
+.logbox{
+  background:#241a0e;color:#d9cba4;padding:14px 16px;font-size:12.5px;line-height:1.7;
+  overflow:auto;max-height:52vh;border-radius:2px;white-space:pre-wrap;word-break:break-all;
+}
+
+/* Toast */
+#toasts{position:fixed;top:18px;right:18px;z-index:99}
+.toast{
+  background:var(--ink);color:var(--paper2);padding:10px 18px;margin-bottom:8px;
+  border:1px solid var(--brass);border-radius:2px;letter-spacing:.08em;font-size:14px;
+}
+.toast.err{background:var(--danger);border-color:var(--danger)}
+
+/* 通用模态框 */
+dialog{
+  border:1px solid #8a774e;background:var(--paper2);color:var(--ink);
+  padding:24px 28px;width:440px;max-width:92vw;border-radius:2px;
+}
+dialog::backdrop{background:rgba(27,19,11,.62)}
+.mhead{font-size:17px;font-weight:600;letter-spacing:.12em;border-bottom:2px solid var(--brass);padding-bottom:8px;margin-bottom:12px}
+.mbody input,.mbody textarea,.mbody select{margin-bottom:6px}
+dialog menu{display:flex;justify-content:flex-end;gap:10px;padding:14px 0 0}
+</style>
+</head>
+<body>
+
+<div id="toasts"></div>
+
+<dialog id="modal">
+  <div class="mhead" id="m_title"></div>
+  <div class="mbody" id="m_body"></div>
+  <menu>
+    <button class="ghost" onclick="closeModal(null)">取消</button>
+    <button id="m_ok">确定</button>
+  </menu>
+</dialog>
+
+<!-- ═══ 登录罩 ═══ -->
+<div id="login">
+  <div class="lcard">
+    <svg class="brain" width="96" height="96" viewBox="0 0 64 64" aria-hidden="true">
+      <circle cx="32" cy="32" r="29" fill="none" stroke="#a5853c" stroke-width="1.4"/>
+      <circle cx="32" cy="32" r="25" fill="none" stroke="#5a492a" stroke-width="0.8"/>
+      <g fill="none" stroke="#c6a355" stroke-width="1.8" stroke-linecap="round">
+        <path d="M32 12 C 28 19, 36 24, 32 31 C 28 38, 36 43, 32 52"/>
+        <path d="M13 25 C 18 16, 26 15, 30 19"/>
+        <path d="M13 39 C 18 48, 26 49, 30 45"/>
+        <path d="M51 25 C 46 16, 38 15, 34 19"/>
+        <path d="M51 39 C 46 48, 38 49, 34 45"/>
+      </g>
+    </svg>
+    <h1>知识库藏书阁</h1>
+    <div class="lsub">典藏万卷 · 唯你裁决</div>
+    <input id="ak" type="password" placeholder="管理员密钥" onkeydown="if(event.key==='Enter')login()">
+    <button onclick="login()">入 阁</button>
+    <div id="loginmsg" class="msg err"></div>
+  </div>
+</div>
+
+<!-- ═══ 主台 ═══ -->
+<div id="panel" style="display:none">
+  <aside id="side">
+    <div class="brand">
+      <svg class="brain" width="54" height="54" viewBox="0 0 64 64" aria-hidden="true">
+        <circle cx="32" cy="32" r="29" fill="none" stroke="#a5853c" stroke-width="1.6"/>
+        <g fill="none" stroke="#c6a355" stroke-width="2.2" stroke-linecap="round">
+          <path d="M32 12 C 28 19, 36 24, 32 31 C 28 38, 36 43, 32 52"/>
+          <path d="M13 25 C 18 16, 26 15, 30 19"/>
+          <path d="M13 39 C 18 48, 26 49, 30 45"/>
+          <path d="M51 25 C 46 16, 38 15, 34 19"/>
+          <path d="M51 39 C 46 48, 38 49, 34 45"/>
+        </g>
+      </svg>
+      <div class="brandname">知识库藏书阁</div>
+      <div class="brandsub">INCEPTION · ARCHIVE</div>
+    </div>
+    <nav>
+      <div class="nav on" data-page="overview" onclick="showPage('overview')"><span class="no">壹</span>总览</div>
+      <div class="nav" data-page="trusted" onclick="showPage('trusted')"><span class="no">贰</span>信任区</div>
+      <div class="nav" data-page="suspect" onclick="showPage('suspect')"><span class="no">叁</span>存疑区</div>
+      <div class="nav" data-page="pending" onclick="showPage('pending')"><span class="no">肆</span>待审核区</div>
+      <div class="nav" data-page="approve" onclick="showPage('approve')"><span class="no">伍</span>审批中心<span class="badge" id="bdg_approve" style="display:none"></span></div>
+      <div class="nav" data-page="newentry" onclick="showPage('newentry')"><span class="no">陆</span>新增知识</div>
+      <div class="nav" data-page="keys" onclick="showPage('keys')"><span class="no">柒</span>密钥与授权</div>
+      <div class="nav" data-page="types" onclick="showPage('types')"><span class="no">捌</span>类型管理</div>
+      <div class="nav" data-page="logs" onclick="showPage('logs')"><span class="no">玖</span>日志</div>
+    </nav>
+    <div class="sidefoot"><button onclick="logout()">退出藏书阁</button></div>
+  </aside>
+
+  <main id="main">
+
+    <!-- ═══ 壹 · 总览 ═══ -->
+    <section id="pg_overview">
+      <div class="pagehead">
+        <div><h2>总览</h2><span class="hint">进门先看数：有没有事等你裁决 · 点条目直达对应区</span></div>
+      </div>
+      <div class="card">
+        <h3>典藏总览</h3>
+        <div class="lrow" id="lr_app" onclick="showPage('approve')"><span class="k">待审 · 访问申请</span><span class="v" id="ov_app">–</span></div>
+        <div class="lrow" id="lr_req" onclick="showPage('approve')"><span class="k">待审 · AI 申请</span><span class="v" id="ov_req">–</span></div>
+        <div class="lrow" onclick="showPage('trusted')"><span class="k">信任区典藏</span><span class="v" id="ov_t">–</span></div>
+        <div class="lrow" onclick="showPage('suspect')"><span class="k">存疑区典藏</span><span class="v" id="ov_s">–</span></div>
+        <div class="lrow" onclick="showPage('pending')" style="border-bottom:none"><span class="k">待审核区典藏</span><span class="v" id="ov_p">–</span></div>
+      </div>
+      <div class="card">
+        <h3>总开关</h3>
+        <div class="swrow"><span>服务总开关</span><span class="pill" id="st_enabled"></span><button class="ghost" onclick="toggle('enabled')">切换</button></div>
+        <div class="swrow"><span>对外访问</span><span class="pill" id="st_remote"></span><button class="ghost" onclick="toggle('allow_remote')">切换</button></div>
+        <div class="swrow" style="border-bottom:none"><span>目录公开</span><span class="pill" id="st_catalog"></span><button class="ghost" onclick="toggle('catalog_public')">切换</button></div>
+      </div>
+    </section>
+
+    <!-- ═══ 贰 · 信任区 ═══ -->
+    <section id="pg_trusted" style="display:none">
+      <div class="pagehead">
+        <div><h2>信任区</h2><span class="hint">已裁决入库的典藏 · 对外可见 · 序号只增不减</span></div>
+        <div class="zcount"><b id="cnt_trusted">–</b>条典藏</div>
+      </div>
+      <div class="toolbar">
+        <input id="q_trusted" placeholder="搜标题或标记…" oninput="renderZone('trusted')">
+        <button class="ghost" onclick="loadZone('trusted')">刷新</button>
+        <button class="ghost" onclick="gotoNew('trusted')">＋ 新增到本区</button>
+      </div>
+      <div id="list_trusted" class="zlist"></div>
+    </section>
+
+    <!-- ═══ 叁 · 存疑区 ═══ -->
+    <section id="pg_suspect" style="display:none">
+      <div class="pagehead">
+        <div><h2>存疑区</h2><span class="hint">来源可信但内容存疑 · 核实后移信任区</span></div>
+        <div class="zcount"><b id="cnt_suspect">–</b>条典藏</div>
+      </div>
+      <div class="toolbar">
+        <input id="q_suspect" placeholder="搜标题或标记…" oninput="renderZone('suspect')">
+        <button class="ghost" onclick="loadZone('suspect')">刷新</button>
+        <button class="ghost" onclick="gotoNew('suspect')">＋ 新增到本区</button>
+      </div>
+      <div id="list_suspect" class="zlist"></div>
+    </section>
+
+    <!-- ═══ 肆 · 待审核区 ═══ -->
+    <section id="pg_pending" style="display:none">
+      <div class="pagehead">
+        <div><h2>待审核区</h2><span class="hint">新到未裁 · 裁决后移信任区或存疑区</span></div>
+        <div class="zcount"><b id="cnt_pending">–</b>条典藏</div>
+      </div>
+      <div class="toolbar">
+        <input id="q_pending" placeholder="搜标题或标记…" oninput="renderZone('pending')">
+        <button class="ghost" onclick="loadZone('pending')">刷新</button>
+        <button class="ghost" onclick="gotoNew('pending')">＋ 新增到本区</button>
+      </div>
+      <div id="list_pending" class="zlist"></div>
+    </section>
+
+    <!-- ═══ 伍 · 审批中心 ═══ -->
+    <section id="pg_approve" style="display:none">
+      <div class="pagehead">
+        <div><h2>审批中心</h2><span class="hint">你是唯一裁决者：访问申请与 AI 的 REQ 都在这里</span></div>
+      </div>
+      <div class="card">
+        <h3>访问申请（人类访问方）</h3>
+        <div id="apps"></div>
+        <div id="appkey"></div>
+      </div>
+      <div class="card">
+        <h3>AI 申请（REQ）</h3>
+        <div id="reqs"></div>
+      </div>
+      <div class="card">
+        <h3>AI 建议（发现机制）<span class="badge" id="bdg_sug" style="display:none"></span></h3>
+        <div class="hint" style="margin-bottom:8px">AI 从对话经验里挖出的候选规律与缺口——采纳后词典类直接生效，其余转成 REQ 由你终审入库</div>
+        <div id="suggestions"></div>
+      </div>
+    </section>
+
+    <!-- ═══ 陆 · 新增知识 ═══ -->
+    <section id="pg_newentry" style="display:none">
+      <div class="pagehead">
+        <div><h2>新增知识</h2><span class="hint">普通文本输入 · 程序自动分配标记 · 入哪个区由你点选</span></div>
+      </div>
+      <div class="card">
+        <h3>落入哪个区</h3>
+        <div class="row" id="ne_zones">
+          <label class="zpick" style="margin:0"><input type="radio" name="ne_zone" value="pending" checked style="width:auto"> 待审核区（默认，先审后用）</label>
+          <label class="zpick" style="margin:0"><input type="radio" name="ne_zone" value="trusted" style="width:auto"> 信任区（直接入库）</label>
+          <label class="zpick" style="margin:0"><input type="radio" name="ne_zone" value="suspect" style="width:auto"> 存疑区（存疑待核）</label>
+        </div>
+      </div>
+      <div class="card">
+        <h3>内容</h3>
+        <label>类型</label>
+        <select id="ne_type"></select>
+        <label>标题</label>
+        <input id="ne_title" placeholder="一句话说清它是什么">
+        <label>简介（目录公开显示）</label>
+        <input id="ne_summary" placeholder="目录上的一行介绍">
+        <label>详细使用方法</label>
+        <textarea id="ne_usage"></textarea>
+        <label>详细使用经验</label>
+        <textarea id="ne_experience"></textarea>
+        <label>局限性</label>
+        <textarea id="ne_limitations"></textarea>
+        <label>正文 / 示例（受保护，不对外公开）</label>
+        <textarea id="ne_content" style="min-height:120px"></textarea>
+        <div class="row" style="margin-top:14px">
+          <button class="good" onclick="createEntry()">入阁</button>
+          <span id="nemsg" class="msg"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 柒 · 密钥与授权 ═══ -->
+    <section id="pg_keys" style="display:none">
+      <div class="pagehead">
+        <div><h2>密钥与授权</h2><span class="hint">密钥只存哈希、只显示一次 · 吊销 ≤1 秒生效</span></div>
+      </div>
+      <div class="card">
+        <h3>现有密钥</h3>
+        <div id="keys"></div>
+      </div>
+      <div class="card">
+        <h3>追加授权 / 临时授权 / 收回</h3>
+        <div class="row">
+          <input id="gk_name" placeholder="访问方名称" style="max-width:200px">
+          <input id="gk_ids" placeholder="标记，逗号分隔，如 P1,S2" style="max-width:280px">
+          <input id="tk_hours" type="number" value="24" style="width:90px" title="临时授权小时数">
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button class="good" onclick="grant()">追加永久授权</button>
+          <button onclick="tempGrant()">临时授权（小时）</button>
+          <button class="ghost" onclick="revokeId()">收回该标记</button>
+          <button class="danger" onclick="revokeKey()">吊销整个访问方</button>
+        </div>
+        <div id="keymsg" class="msg"></div>
+      </div>
+    </section>
+
+    <!-- ═══ 捌 · 类型管理 ═══ -->
+    <section id="pg_types" style="display:none">
+      <div class="pagehead">
+        <div><h2>类型管理</h2><span class="hint">类型 = 字母前缀 + 名称（如 P → python）</span></div>
+      </div>
+      <div class="card">
+        <div id="types" class="muted"></div>
+        <div class="row" style="margin-top:12px">
+          <input id="ty_name" placeholder="类型名（python）" style="max-width:220px">
+          <input id="ty_prefix" placeholder="字母（P）" style="width:110px">
+          <button class="good" onclick="addType()">添加</button>
+        </div>
+        <div id="tymsg" class="msg"></div>
+      </div>
+    </section>
+
+    <!-- ═══ 玖 · 日志 ═══ -->
+    <section id="pg_logs" style="display:none">
+      <div class="pagehead">
+        <div><h2>日志</h2><span class="hint">哈希链审计：任何一行被改都会断裂报警</span></div>
+      </div>
+      <div class="card">
+        <div class="row">
+          <select id="log_kind" style="max-width:220px"><option value="access">access（调用）</option><option value="admin">admin（管理）</option></select>
+          <button onclick="loadLogs()">查看最近 50 条</button>
+          <button class="ghost" onclick="verifyLogs()">校验哈希链</button>
+          <button class="ghost" onclick="toggleLogFlat()" id="logflat">平铺显示</button>
+        </div>
+        <div id="logmsg" class="msg"></div>
+        <div id="logbox" style="margin-top:10px"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ═══ 条目管理罩：查看/编辑/移区/废弃/回滚 一处办 ═══ -->
+<div id="entryMask" style="display:none">
+  <div class="epanel">
+    <div class="ehead">
+      <span class="tag" id="em_id"></span>
+      <span class="etitle" id="em_head"></span>
+      <span class="pill" id="em_zone"></span>
+    </div>
+    <label>标题</label>
+    <input id="ee_title">
+    <label>简介</label>
+    <textarea id="ee_summary" style="min-height:46px"></textarea>
+    <label>详细使用方法</label>
+    <textarea id="ee_usage"></textarea>
+    <label>详细使用经验</label>
+    <textarea id="ee_experience"></textarea>
+    <label>局限性</label>
+    <textarea id="ee_limitations"></textarea>
+    <label>正文 / 示例（受保护）</label>
+    <textarea id="ee_content" style="min-height:120px"></textarea>
+    <div class="efoot">
+      <button class="good" onclick="saveEntry()">保存修改</button>
+      <button class="ghost" onclick="moveEntry()">移区</button>
+      <span id="em_hist" class="muted" style="align-self:center"></span>
+      <button class="ghost" id="em_rb" onclick="rollbackEntry()" style="display:none">回滚到最近历史版本</button>
+      <span class="sp"></span>
+      <button class="danger" onclick="delEntry()">废弃</button>
+      <button class="ghost" onclick="closeEntry()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let AK = sessionStorage.getItem('ak') || '';
+const $ = id => document.getElementById(id);
+// 第二轮审查 L7：所有进 HTML 的外部值必须经 esc() 转义——这是 XSS 防线，不得绕过
+const esc = s => { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; };
+const msg = (id, t, ok) => { const e = $(id); e.className = 'msg ' + (ok ? 'ok' : 'err'); e.textContent = t; };
+
+/* ── Toast ── */
+function toast(text, ok = true) {
+  const t = document.createElement('div');
+  t.className = 'toast' + (ok ? '' : ' err');
+  t.textContent = text;
+  $('toasts').appendChild(t);
+  setTimeout(() => t.remove(), 3600);
+}
+
+/* ── 通用模态框：fields [{key,label,type,options,placeholder,value}] ── */
+let _modalResolve = null;
+function openModal({ title, body = '', fields = [], okText = '确定', danger = false }) {
+  return new Promise(resolve => {
+    _modalResolve = resolve;
+    $('m_title').textContent = title;
+    let html = body ? `<div style="margin-bottom:6px">${body}</div>` : '';
+    for (const f of fields) {
+      html += `<label>${esc(f.label)}</label>`;
+      if (f.type === 'select') {
+        html += `<select id="mf_${f.key}">` + f.options.map(o =>
+          `<option value="${esc(o.v)}"${o.v === f.value ? ' selected' : ''}>${esc(o.t)}</option>`).join('') + '</select>';
+      } else if (f.type === 'textarea') {
+        html += `<textarea id="mf_${f.key}" placeholder="${esc(f.placeholder || '')}">${esc(f.value || '')}</textarea>`;
+      } else {
+        html += `<input id="mf_${f.key}" placeholder="${esc(f.placeholder || '')}" value="${esc(f.value || '')}">`;
+      }
+    }
+    $('m_body').innerHTML = html;
+    const ok = $('m_ok');
+    ok.textContent = okText;
+    ok.className = danger ? 'danger' : '';
+    ok.onclick = () => {
+      const values = {};
+      for (const f of fields) values[f.key] = $('mf_' + f.key).value;
+      closeModal(values);
+    };
+    $('modal').showModal();
+  });
+}
+function closeModal(values) {
+  $('modal').close();
+  if (_modalResolve) { _modalResolve(values); _modalResolve = null; }
+}
+$('modal').addEventListener('cancel', () => closeModal(null));
+
+/* ── API ── */
+async function api(path, opts = {}) {
+  opts.headers = Object.assign({ 'X-Admin-Key': AK, 'Content-Type': 'application/json' }, opts.headers || {});
+  const r = await fetch(path, opts);
+  if (r.status === 401) { logout(); throw new Error('登录失效'); }
+  if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.detail || ('错误 ' + r.status)); }
+  return r.json();
+}
+
+function login() {
+  AK = $('ak').value.trim();
+  api('/admin/api/state').then(() => {
+    sessionStorage.setItem('ak', AK);
+    $('login').style.display = 'none'; $('panel').style.display = 'grid';
+    init();
+  }).catch(e => { $('loginmsg').textContent = e.message; });
+}
+function logout() { sessionStorage.removeItem('ak'); AK = ''; location.reload(); }
+if (AK) { $('ak').value = AK; login(); }
+
+async function init() { await refreshState(); await loadTypes(); showPage('overview'); }
+const ZONE = { trusted: '信任区', suspect: '存疑区', pending: '待审核区' };
+
+/* ── 导航：一区一页，各占整屏 ── */
+const PAGES = { overview: 1, trusted: 1, suspect: 1, pending: 1, approve: 1, newentry: 1, keys: 1, types: 1, logs: 1 };
+async function showPage(name) {
+  document.querySelectorAll('.nav').forEach(n => n.classList.toggle('on', n.dataset.page === name));
+  for (const p in PAGES) $('pg_' + p).style.display = p === name ? '' : 'none';
+  if (name === 'approve') { loadApps(); loadReqs(); loadSuggestions(); }
+  if (name === 'trusted' || name === 'suspect' || name === 'pending') loadZone(name);
+  if (name === 'keys') loadKeys();
+  if (name === 'logs') loadLogs();
+}
+
+/* ── 总览 ── */
+function setPill(id, on, onText, offText) {
+  const e = $(id);
+  e.textContent = on ? onText : offText;
+  e.className = 'pill ' + (on ? 'done' : 'no');
+}
+async function refreshState() {
+  const s = await api('/admin/api/state');
+  setPill('st_enabled', s.enabled, '开', '关（禁止一切访问）');
+  setPill('st_remote', s.allow_remote, '开', '关（仅本机）');
+  setPill('st_catalog', s.catalog_public, '公开', '隐藏');
+  const o = await api('/admin/api/overview');
+  $('ov_app').textContent = o.applications_pending;
+  $('ov_req').textContent = o.reqs_pending;
+  $('ov_t').textContent = o.counts.trusted;
+  $('ov_s').textContent = o.counts.suspect;
+  $('ov_p').textContent = o.counts.pending;
+  $('lr_app').classList.toggle('hot', o.applications_pending > 0);
+  $('lr_req').classList.toggle('hot', o.reqs_pending > 0);
+  const total = o.applications_pending + o.reqs_pending;
+  $('bdg_approve').style.display = total ? '' : 'none';
+  $('bdg_approve').textContent = total;
+}
+async function toggle(k) {
+  const cur = $(k === 'enabled' ? 'st_enabled' : k === 'allow_remote' ? 'st_remote' : 'st_catalog').textContent;
+  const body = {}; body[k] = !(cur.startsWith('开') || cur.startsWith('公开'));
+  try { const r = await api('/admin/api/state', { method: 'POST', body: JSON.stringify(body) }); refreshState();
+    if (r.note) toast(r.note, true); } catch (e) { toast(e.message, false); }
+}
+
+/* ── 三区：各自一页，搜索+列表+管理罩 ── */
+const ZCACHE = { trusted: [], suspect: [], pending: [] };
+async function loadZone(zone) {
+  const d = await api('/admin/api/entries?zone=' + zone);
+  ZCACHE[zone] = d.entries;
+  $('cnt_' + zone).textContent = d.entries.length;
+  renderZone(zone);
+}
+function renderZone(zone) {
+  const q = ($('q_' + zone).value || '').trim().toLowerCase();
+  const list = ZCACHE[zone].filter(e =>
+    !q || e.id.toLowerCase().includes(q) || e.title.toLowerCase().includes(q) || e.type.toLowerCase().includes(q));
+  if (!list.length) {
+    $('list_' + zone).innerHTML = `<div class="emptyrow">${q ? '没有匹配「' + esc(q) + '」的典藏' : '本区暂无典藏'}</div>`;
+    return;
+  }
+  $('list_' + zone).innerHTML = '<table><tr><th style="width:72px">标记</th><th>标题</th><th style="width:110px">类型</th><th style="width:92px">操作</th></tr>' +
+    list.map(e => `<tr><td class="tag">${esc(e.id)}</td><td>${esc(e.title)}</td><td class="muted">${esc(e.type)}</td>
+      <td><button onclick="openEntry('${esc(e.id)}','${zone}')">管理</button></td></tr>`).join('') + '</table>';
+}
+
+/* ── 条目管理罩 ── */
+let EID = null, EZONE = null, EHIST = [];
+async function openEntry(id, zone) {
+  const d = await api('/admin/api/entries/' + id);
+  const e = d.entry;
+  EID = id; EZONE = zone; EHIST = d.history || [];
+  $('em_id').textContent = id;
+  $('em_head').textContent = e.title;
+  const zp = $('em_zone');
+  zp.textContent = ZONE[e.zone] || e.zone;
+  zp.className = 'pill ' + (e.zone === 'trusted' ? 'done' : e.zone === 'suspect' ? 'wait' : '');
+  $('ee_title').value = e.title;
+  $('ee_summary').value = e.summary;
+  $('ee_usage').value = e.usage;
+  $('ee_experience').value = e.experience;
+  $('ee_limitations').value = e.limitations;
+  $('ee_content').value = e.content;
+  $('em_hist').textContent = EHIST.length ? `历史版本 ${EHIST.length} 个` : '无历史版本';
+  $('em_rb').style.display = EHIST.length ? '' : 'none';
+  $('entryMask').style.display = 'flex';
+}
+function closeEntry() { $('entryMask').style.display = 'none'; EID = null; }
+async function saveEntry() {
+  try {
+    await api('/admin/api/entries/' + EID, { method: 'PUT', body: JSON.stringify({
+      title: $('ee_title').value, summary: $('ee_summary').value, usage: $('ee_usage').value,
+      experience: $('ee_experience').value, limitations: $('ee_limitations').value, content: $('ee_content').value }) });
+    toast('已保存 ' + EID); closeEntry(); loadZone(EZONE);
+  } catch (e) { toast(e.message, false); }
+}
+async function moveEntry() {
+  const id = EID;
+  const r = await openModal({ title: '移区 ' + id,
+    fields: [
+      { key: 'zone', label: '目标分区', type: 'select', options: [
+        { v: 'trusted', t: '信任区' }, { v: 'suspect', t: '存疑区' }, { v: 'pending', t: '待审核区' }] },
+      { key: 'note', label: '说明（可空）', type: 'textarea' }],
+    okText: '确认移区' });
+  if (!r) return;
+  try { await api(`/admin/api/entries/${id}/move`, { method: 'POST', body: JSON.stringify({ zone: r.zone, note: r.note }) });
+    toast('已移区'); closeEntry(); loadZone(EZONE); refreshState(); } catch (e) { toast(e.message, false); }
+}
+async function delEntry() {
+  const id = EID;
+  const r = await openModal({ title: '废弃 ' + id,
+    body: `确认废弃 <b class="tag">${id}</b>？序号不会回收，历史备份保留。`,
+    fields: [{ key: 'reason', label: '废弃原因（可空）', type: 'textarea' }],
+    okText: '确认废弃', danger: true });
+  if (!r) return;
+  try { await api('/admin/api/entries/' + id, { method: 'DELETE', body: JSON.stringify({ reason: r.reason }) });
+    toast('已废弃 ' + id); closeEntry(); loadZone(EZONE); refreshState(); } catch (e) { toast(e.message, false); }
+}
+async function rollbackEntry() {
+  const id = EID, ver = EHIST[0];
+  const r = await openModal({ title: '回滚 ' + id,
+    body: `回滚到 <b class="tag">${esc(ver)}</b>？当前内容会先自动备份。`, okText: '确认回滚' });
+  if (!r) return;
+  try { await api(`/admin/api/entries/${id}/rollback`, { method: 'POST', body: JSON.stringify({ version: ver }) });
+    toast('已回滚'); closeEntry(); loadZone(EZONE); } catch (e) { toast(e.message, false); }
+}
+
+/* ── 新增知识 ── */
+function gotoNew(zone) {
+  showPage('newentry');
+  const r = document.querySelector(`input[name=ne_zone][value=${zone}]`);
+  if (r) r.checked = true;
+}
+async function createEntry() {
+  try {
+    const zone = document.querySelector('input[name=ne_zone]:checked').value;
+    const d = await api('/admin/api/entries', { method: 'POST', body: JSON.stringify({
+      zone, type: $('ne_type').value,
+      title: $('ne_title').value, summary: $('ne_summary').value,
+      usage: $('ne_usage').value, experience: $('ne_experience').value,
+      limitations: $('ne_limitations').value, content: $('ne_content').value }) });
+    msg('nemsg', '已入' + ZONE[zone] + '：' + d.id, true); toast('已入库：' + d.id);
+    ['ne_title','ne_summary','ne_usage','ne_experience','ne_limitations','ne_content'].forEach(i => $(i).value = '');
+    refreshState();
+  } catch (e) { msg('nemsg', e.message, false); }
+}
+
+/* ── 访问申请 ── */
+async function loadApps() {
+  const d = await api('/admin/api/applications');
+  const pend = d.applications.filter(a => a.status === '待审');
+  if (!pend.length) { $('apps').innerHTML = '<div class="muted">没有待审申请</div>'; return; }
+  $('apps').innerHTML = '<table><tr><th>#</th><th>自报名称</th><th>申请标记</th><th>理由</th><th>时间</th><th>操作</th></tr>' +
+    pend.map(a => `<tr><td>${a.n}</td><td>${esc(a.self_name)}</td><td class="tag">${a.ids.join(', ')}</td>
+      <td>${esc(a.reason)}</td><td class="muted">${a.time}</td>
+      <td><button class="good" onclick="approveApp(${a.n})">批准</button>
+      <button class="danger" onclick="rejectApp(${a.n})">拒绝</button></td></tr>`).join('') + '</table>';
+}
+async function approveApp(n) {
+  const r = await openModal({ title: '批准访问申请 #' + n,
+    body: '批准后生成该访问方的专属密钥，<b>仅此一次显示</b>。',
+    fields: [{ key: 'name', label: '为该访问方指定固定名称（唯一）', placeholder: '如：小明' }],
+    okText: '批准并签发密钥' });
+  if (!r || !r.name.trim()) return;
+  try {
+    const d = await api(`/admin/api/applications/${n}/approve`, { method: 'POST', body: JSON.stringify({ name: r.name.trim() }) });
+    $('appkey').innerHTML = `<div class="keybox">已批准「${esc(d.name)}」。密钥仅此一次显示，立即复制转交：<br><br>${esc(d.key)}<br><br><button onclick="copyKey(this)" data-k="${esc(d.key)}">复制密钥</button></div>`;
+    loadApps(); refreshState();
+  } catch (e) { toast(e.message, false); }
+}
+function copyKey(btn) {
+  navigator.clipboard.writeText(btn.dataset.k).then(() => toast('密钥已复制到剪贴板'));
+}
+async function rejectApp(n) {
+  const r = await openModal({ title: '拒绝访问申请 #' + n,
+    fields: [{ key: 'note', label: '拒绝原因（可空）', type: 'textarea' }], okText: '确认拒绝', danger: true });
+  if (!r) return;
+  try { await api(`/admin/api/applications/${n}/reject`, { method: 'POST', body: JSON.stringify({ note: r.note }) });
+    toast('已拒绝'); loadApps(); refreshState(); } catch (e) { toast(e.message, false); }
+}
+
+/* ── 密钥与授权 ── */
+async function loadKeys() {
+  const d = await api('/admin/api/keys');
+  $('keys').innerHTML = '<table><tr><th>名称</th><th>角色</th><th>授权标记</th><th>临时授权</th></tr>' +
+    d.keys.map(k => `<tr><td>${esc(k.name)}</td><td>${esc(k.role_name)}</td><td class="tag">${k.granted_ids.join(', ') || '（无）'}</td>
+      <td class="muted">${Object.entries(k.temp).map(([i, e]) => i + ' 至 ' + e).join('；') || '（无）'}</td></tr>`).join('') + '</table>';
+}
+async function grant() {
+  try { const d = await api('/admin/api/keys/grant', { method: 'POST', body: JSON.stringify({ name: $('gk_name').value.trim(), ids: $('gk_ids').value.split(',').map(s => s.trim().toUpperCase()).filter(Boolean) }) });
+    msg('keymsg', '已授权：' + d.granted.join(',') + (d.warnings.length ? '；注意：' + d.warnings.join('；') : ''), true); loadKeys();
+  } catch (e) { msg('keymsg', e.message, false); }
+}
+async function tempGrant() {
+  const ids = $('gk_ids').value.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+  try { await api('/admin/api/keys/temp', { method: 'POST', body: JSON.stringify({ name: $('gk_name').value.trim(), id: ids[0], hours: +$('tk_hours').value }) });
+    msg('keymsg', '已临时授权（仅对待审核区标记有效）', true); loadKeys();
+  } catch (e) { msg('keymsg', e.message, false); }
+}
+async function revokeId() {
+  const ids = $('gk_ids').value.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+  try { await api('/admin/api/keys/revoke-id', { method: 'POST', body: JSON.stringify({ name: $('gk_name').value.trim(), id: ids[0] }) });
+    msg('keymsg', '已收回（≤1 秒生效）', true); loadKeys();
+  } catch (e) { msg('keymsg', e.message, false); }
+}
+async function revokeKey() {
+  const name = $('gk_name').value.trim();
+  const r = await openModal({ title: '吊销访问方',
+    body: `确认吊销「<b>${esc(name)}</b>」？其密钥<b>立即失效</b>，不可恢复。`,
+    okText: '确认吊销', danger: true });
+  if (!r) return;
+  try { await api('/admin/api/keys/revoke', { method: 'POST', body: JSON.stringify({ name }) });
+    msg('keymsg', '已吊销', true); loadKeys(); } catch (e) { msg('keymsg', e.message, false); }
+}
+
+/* ── 类型 ── */
+async function loadTypes() {
+  const d = await api('/admin/api/types');
+  $('types').textContent = '现有类型：' + (d.types.map(t => `${t.prefix} → ${t.name}`).join('，') || '（无，请先添加）');
+  const escq = s => esc(s).replace(/"/g, '&quot;');
+  $('ne_type').innerHTML = d.types.map(t => `<option value="${escq(t.name)}">${esc(t.name)}（${esc(t.prefix)}）</option>`).join('');
+}
+async function addType() {
+  try { await api('/admin/api/types', { method: 'POST', body: JSON.stringify({ name: $('ty_name').value.trim(), prefix: $('ty_prefix').value.trim() }) });
+    msg('tymsg', '已添加', true); loadTypes();
+  } catch (e) { msg('tymsg', e.message, false); }
+}
+
+/* ── AI 建议（发现机制）── */
+const SUG_KIND = { lexicon: '词典', knowledge_gap: '知识缺口', cooccur: '共现', shortcut: '捷径',
+  converge: '趋同', num_converge: '数值趋同', rule_promote: '规则晋升' };
+async function loadSuggestions() {
+  let d;
+  try { d = await api('/admin/api/inception/suggestions'); }
+  catch (e) { $('suggestions').innerHTML = '<div class="muted">建议队列读取失败：' + esc(e.message) + '</div>'; return; }
+  const b = $('bdg_sug');
+  b.style.display = d.pending ? '' : 'none';
+  b.textContent = d.pending || '';
+  if (!d.items.length) { $('suggestions').innerHTML = '<div class="muted">队列是空的——AI 还没挖出候选，多聊几轮就会出现</div>'; return; }
+  $('suggestions').innerHTML = d.items.map(s => {
+    const pend = s.status === '待裁决';
+    const pillCls = pend ? 'wait' : (s.status === '已拒绝' ? 'no' : 'done');
+    return `
+    <div class="reqcard">
+      <b class="tag">${esc(s.id)}</b> <span class="pill">${esc(SUG_KIND[s.kind] || s.kind)}</span>
+      <span class="pill ${pillCls}">${esc(s.status)}</span>${s.req ? ` <span class="muted">→ ${esc(s.req)}</span>` : ''}
+      <div class="body">${esc(s.content)}</div>
+      <div class="muted">${esc(s.why)}</div>
+      ${(s.evidence && s.evidence.length) ? `<details><summary>证据档案（${s.evidence.length}）</summary><div class="body muted">${s.evidence.map(esc).join('\n')}</div></details>` : ''}
+      ${pend ? `<div class="row">
+        <button class="good" onclick="applySug('${s.id}')">采纳${s.kind === 'lexicon' ? '（录入词典）' : '（转 REQ 终审）'}</button>
+        <button class="danger" onclick="dropSug('${s.id}')">拒绝</button>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+async function applySug(sid) {
+  try { const d = await api(`/admin/api/inception/suggestions/${sid}/apply`, { method: 'POST', body: '{}' });
+    toast(d.msg || '已采纳 ' + sid); loadSuggestions(); loadReqs(); refreshState();
+  } catch (e) { toast(e.message, false); }
+}
+async function dropSug(sid) {
+  const r = await openModal({ title: '拒绝建议 ' + sid,
+    fields: [], okText: '确认拒绝', danger: true });
+  if (!r) return;
+  try { const d = await api(`/admin/api/inception/suggestions/${sid}/drop`, { method: 'POST', body: '{}' });
+    toast(d.msg || '已拒绝 ' + sid); loadSuggestions();
+  } catch (e) { toast(e.message, false); }
+}
+
+/* ── AI 申请区 ── */
+function reqCard(r) {
+  const pending = r.status === '待审核';
+  const pillCls = pending ? 'wait' : r.status === '已执行' ? 'done' : 'no';
+  return `
+    <div class="reqcard">
+      <b class="tag">${r.id}</b> [${esc(r.action_name)}] ${esc(r.proposer)} → ${esc(r.target) || '（新增）'}
+      <span class="muted">${r.created_at}</span>
+      <span class="pill ${pillCls}">${esc(r.status)}</span>
+      ${r.admin_note ? `<span class="muted">意见：${esc(r.admin_note)}</span>` : ''}
+      <div class="body">${esc(r.proposal)}</div>
+      <details><summary>理由与证明过程</summary>
+        <div class="body"><b>理由：</b>${esc(r.reason)}\n\n<b>证明：</b>${esc(r.proof)}</div>
+      </details>
+      ${pending ? `<div class="row">
+        ${['move_zone','suspect_to_pending','append_experience'].includes(r.action) ?
+          `<button class="good" onclick="execReq('${r.id}','${r.action}')">一键执行</button>` :
+          `<button class="good" onclick="approveReq('${r.id}','${r.action}','${esc(r.target || '')}')">批准入库…</button>`}
+        <button class="danger" onclick="rejectReq('${r.id}')">拒绝</button>
+      </div>` : ''}
+    </div>`;
+}
+async function loadReqs() {
+  const d = await api('/admin/api/reqs');
+  if (!d.reqs.length) { $('reqs').innerHTML = '<div class="muted">还没有申请记录</div>'; return; }
+  const groups = {};
+  for (const r of d.reqs) (groups[r.proposer] = groups[r.proposer] || []).push(r);
+  const sorted = Object.entries(groups).sort((a, b) => {
+    const pa = a[1].some(r => r.status === '待审核') ? 0 : 1;
+    const pb = b[1].some(r => r.status === '待审核') ? 0 : 1;
+    return pa - pb || b[1].length - a[1].length;
+  });
+  $('reqs').innerHTML = sorted.map(([who, rs]) => {
+    const pend = rs.filter(r => r.status === '待审核').length;
+    return `
+    <details class="groupbox" ${pend ? 'open' : ''}>
+      <summary>${esc(who)}（共 ${rs.length} 条${pend ? `｜<span class="pill wait">待审 ${pend}</span>` : ''}）</summary>
+      <div class="inner">${rs.map(reqCard).join('')}</div>
+    </details>`;
+  }).join('');
+}
+async function execReq(id, action) {
+  const fields = [];
+  if (action === 'move_zone') fields.push({ key: 'zone', label: '目标分区', type: 'select',
+    options: [{ v: 'trusted', t: '信任区' }, { v: 'suspect', t: '存疑区' }] });
+  fields.push({ key: 'note', label: '处理意见（AI 可见，可空）', type: 'textarea' });
+  const r = await openModal({ title: '执行 ' + id, fields, okText: '确认执行' });
+  if (!r) return;
+  const body = { note: r.note || '' };
+  if (r.zone) body.zone = r.zone;
+  try { await api(`/admin/api/reqs/${id}/exec`, { method: 'POST', body: JSON.stringify(body) });
+    toast('已执行 ' + id); loadReqs(); refreshState(); } catch (e) { toast(e.message, false); }
+}
+async function rejectReq(id) {
+  const r = await openModal({ title: '拒绝 ' + id,
+    fields: [{ key: 'note', label: '拒绝理由（AI 可见）', type: 'textarea' }], okText: '确认拒绝', danger: true });
+  if (!r) return;
+  try { await api(`/admin/api/reqs/${id}/reject`, { method: 'POST', body: JSON.stringify({ note: r.note || '' }) });
+    toast('已拒绝 ' + id); loadReqs(); refreshState(); } catch (e) { toast(e.message, false); }
+}
+/* ── 变更 #28：新增/修改类申请网页批准入库（你选信任区/存疑区，逐字段可改）── */
+function prefillFromProposal(prop) {
+  /* 尽力从申请正文拆出表单预填：规则格式 当[..]→则[..]档[.]域[.] → 用法字段 */
+  const out = { title: '', summary: '', usage: '', experience: '', limitations: '' };
+  const m = /当\[.*?→则\[.*?\]档\[.\]域\[.*?\]/.exec(prop || '');
+  if (m) out.usage = m[0];
+  const t = (prop || '').replace(/【[^】]*】/g, '').trim();
+  out.title = t.split(/[（(\n]/)[0].slice(0, 30);
+  out.summary = t.slice(0, 120);
+  return out;
+}
+async function approveReq(id, action, target) {
+  let fields = [], body = {};
+  if (action === 'new') {
+    const tnames = ((await api('/admin/api/types')).types || []).map(t => t.name || t);
+    const req = (await api('/admin/api/reqs')).reqs.find(x => x.id === id) || {};
+    const pre = prefillFromProposal(req.proposal || '');
+    fields = [
+      { key: 'zone', label: '落到哪个区', type: 'select', value: 'pending',
+        options: [{ v: 'pending', t: '待审核区（默认：继续考核）' }, { v: 'suspect', t: '存疑区（先观察）' }, { v: 'trusted', t: '信任区（直接生效）' }] },
+      { key: 'type', label: '知识类型', type: 'select', value: tnames.includes('推演规则') ? '推演规则' : (tnames[0] || ''),
+        options: tnames.map(t => ({ v: t, t })) },
+      { key: 'title', label: '标题', value: pre.title },
+      { key: 'summary', label: '简介', type: 'textarea', value: pre.summary },
+      { key: 'usage', label: '详细使用方法', type: 'textarea', value: pre.usage },
+      { key: 'experience', label: '使用经验', type: 'textarea', value: pre.experience },
+      { key: 'limitations', label: '局限性', type: 'textarea', value: pre.limitations },
+      { key: 'note', label: '处理意见（AI 可见，可空）' },
+    ];
+  } else {  /* modify：读出当前条目，逐字段改 */
+    const cur = await api('/admin/api/entries/' + encodeURIComponent(target));
+    const e = cur.entry || cur;
+    fields = [
+      { key: 'title', label: '标题', value: e.title || '' },
+      { key: 'summary', label: '简介', type: 'textarea', value: e.summary || '' },
+      { key: 'usage', label: '详细使用方法', type: 'textarea', value: e.usage || '' },
+      { key: 'experience', label: '使用经验', type: 'textarea', value: e.experience || '' },
+      { key: 'limitations', label: '局限性', type: 'textarea', value: e.limitations || '' },
+      { key: 'note', label: '处理意见（AI 可见，可空）' },
+    ];
+  }
+  const r = await openModal({ title: '批准入库 ' + id + '（逐字段确认）', fields, okText: '确认入库' });
+  if (!r) return;
+  body.note = r.note || '';
+  body.fields = { title: r.title, summary: r.summary, usage: r.usage,
+                  experience: r.experience, limitations: r.limitations };
+  if (action === 'new') { body.zone = r.zone; body.type = r.type; }
+  try { await api(`/admin/api/reqs/${id}/exec`, { method: 'POST', body: JSON.stringify(body) });
+    toast('已执行 ' + id); loadReqs(); refreshState(); } catch (e) { toast(e.message, false); }
+}
+
+/* ── 日志 ── */
+let logFlat = false;
+function toggleLogFlat() {
+  logFlat = !logFlat;
+  $('logflat').textContent = logFlat ? '按访问方折叠' : '平铺显示';
+  loadLogs();
+}
+async function loadLogs() {
+  const d = await api(`/admin/api/logs?type=${$('log_kind').value}&n=50`);
+  if (!d.lines.length) { $('logbox').innerHTML = '<div class="muted">（空）</div>'; return; }
+  if (logFlat) {
+    $('logbox').innerHTML = `<pre class="logbox">${esc(d.lines.join('\n'))}</pre>`;
+    return;
+  }
+  // 按访问方分组折叠：行格式 hash | 时间 | 访问方 | 内容 | IP
+  const groups = {};
+  for (const line of d.lines) {
+    const parts = line.split(' | ');
+    const who = parts.length >= 4 ? parts[2].trim() : '（未知）';
+    (groups[who] = groups[who] || []).push(line);
+  }
+  const sorted = Object.entries(groups).sort((a, b) => b[1].length - a[1].length);
+  $('logbox').innerHTML = sorted.map(([who, lines]) => `
+    <details class="groupbox">
+      <summary>${esc(who)}（${lines.length} 条）</summary>
+      <pre class="logbox">${esc(lines.join('\n'))}</pre>
+    </details>`).join('');
+  msg('logmsg', `共 ${d.lines.length} 条，${sorted.length} 个访问方`, true);
+}
+async function verifyLogs() {
+  const d = await api('/admin/api/logs/verify');
+  const f = r => r[0] ? `完好（${r[1]} 条）` : `第 ${r[2]} 行断裂！`;
+  const ok = d.ok;
+  msg('logmsg', `access：${f(d.access)} ｜ admin：${f(d.admin)}`, ok);
+  toast(ok ? '哈希链校验完好' : '哈希链断裂，请检查日志！', ok);
+}
+</script>
+</body>
+</html>

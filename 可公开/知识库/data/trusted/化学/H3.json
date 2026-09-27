@@ -1,0 +1,15 @@
+{
+  "id": "H3",
+  "type": "化学",
+  "zone": "trusted",
+  "title": "元素与常见元素符号",
+  "summary": "元素是质子数相同的一类原子的总称",
+  "usage": "看化学式先认元素符号",
+  "experience": "前20号元素符号要脱口而出",
+  "limitations": "元素只讲种类不讲个数",
+  "content": "元素：质子数（核电荷数）相同的一类原子的总称。元素符号用拉丁字母表示，一大二小。\n必背前 20 号：氢H 氦He 锂Li 铍Be 硼B 碳C 氮N 氧O 氟F 氖Ne 钠Na 镁Mg 铝Al 硅Si 磷P 硫S 氯Cl 氩Ar 钾K 钙Ca。\n其他常见：锰Mn 铁Fe 铜Cu 锌Zn 银Ag 钡Ba 汞Hg 碘I。\n地壳含量前四：氧硅铝铁。物质分类：纯净物（单质、化合物）与混合物。",
+  "experiences": [],
+  "created_at": "2026-09-23 21:25:13",
+  "updated_at": "2026-09-23 21:25:13",
+  "source": "admin"
+}

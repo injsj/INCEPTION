@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>知识库目录</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background: #0f1419; color: #d7dde3; min-height: 100vh; }
+  header { padding: 20px 24px; border-bottom: 1px solid #232b33; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  header h1 { font-size: 20px; color: #7ee0a3; }
+  #badge { font-size: 12px; color: #8a94a0; }
+  main { max-width: 860px; margin: 0 auto; padding: 20px 24px 60px; }
+  #hint { font-size: 13px; color: #8a94a0; margin: 14px 0 20px; line-height: 1.7; }
+  .zone { margin-bottom: 28px; }
+  .zone h2 { font-size: 16px; color: #e8eef4; margin-bottom: 6px; padding-left: 10px; border-left: 3px solid #7ee0a3; }
+  .zone.suspect h2 { border-left-color: #e8c07e; }
+  .zone .warn { font-size: 12px; color: #b08d4f; margin: 4px 0 10px 13px; }
+  .entry { display: flex; gap: 10px; align-items: flex-start; background: #161d24; border: 1px solid #232b33; border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; cursor: pointer; transition: border-color .15s; }
+  .entry:hover { border-color: #3a4753; }
+  .entry input { margin-top: 4px; accent-color: #7ee0a3; }
+  .entry .tag { font-family: Consolas, monospace; font-size: 12px; color: #7ee0a3; background: #10241a; border-radius: 4px; padding: 2px 8px; white-space: nowrap; }
+  .zone.suspect .entry .tag { color: #e8c07e; background: #2a2113; }
+  .entry .body b { font-size: 14px; }
+  .entry .body .sum { font-size: 12.5px; color: #8a94a0; margin-top: 3px; line-height: 1.6; }
+  #applybox { background: #161d24; border: 1px solid #2c3a2f; border-radius: 10px; padding: 18px; position: sticky; bottom: 0; }
+  #applybox h3 { font-size: 14px; color: #7ee0a3; margin-bottom: 10px; }
+  #applybox input, #applybox textarea { width: 100%; background: #0f1419; border: 1px solid #2a333d; color: #d7dde3; border-radius: 6px; padding: 9px 11px; font-size: 13px; margin-bottom: 10px; font-family: inherit; }
+  #applybox textarea { min-height: 64px; resize: vertical; }
+  #applybox button { background: #2ea86b; color: #fff; border: 0; border-radius: 6px; padding: 9px 22px; font-size: 14px; cursor: pointer; }
+  #applybox button:disabled { background: #2a333d; color: #66707a; cursor: default; }
+  #selinfo { font-size: 12px; color: #8a94a0; margin-bottom: 8px; }
+  #msg { font-size: 13px; margin-left: 12px; }
+  #msg.ok { color: #7ee0a3; } #msg.err { color: #e07e7e; }
+  .closed { text-align: center; padding: 80px 20px; color: #8a94a0; }
+  .closed h2 { color: #e07e7e; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>知识库目录</h1>
+  <span id="badge">加载中…</span>
+</header>
+<main>
+  <div id="hint">
+    勾选需要的知识，填写名称与理由后提交申请。管理员批准后会把你的<b>专属密钥</b>私下转交给你，
+    之后即可凭密钥读取对应知识的详细使用方法、使用经验与正文。这里只展示简介，正文不公开。
+  </div>
+  <div id="zones"></div>
+  <div id="applybox">
+    <h3>提交访问申请（已勾选 <span id="selcount">0</span> 条）</h3>
+    <div id="selinfo">尚未勾选任何知识</div>
+    <input id="self_name" maxlength="20" placeholder="你的名称（自报，供管理员识别）">
+    <textarea id="reason" maxlength="500" placeholder="申请理由（为什么需要这些知识）"></textarea>
+    <button id="submitBtn" onclick="submitApply()" disabled>提交申请</button>
+    <span id="msg"></span>
+  </div>
+</main>
+<script>
+let catalog = null;
+const selected = new Set();
+
+async function load() {
+  const zonesEl = document.getElementById('zones');
+  const badge = document.getElementById('badge');
+  try {
+    const r = await fetch('/api/catalog');
+    if (r.status === 503) {
+      document.querySelector('main').innerHTML =
+        '<div class="closed"><h2>服务当前已关闭</h2><p>知识库已被管理员暂停访问，请稍后再试。</p></div>';
+      badge.textContent = '已关闭';
+      return;
+    }
+    if (r.status === 403) {
+      document.querySelector('main').innerHTML =
+        '<div class="closed"><h2>目录暂不公开</h2><p>请联系管理员。</p></div>';
+      return;
+    }
+    const d = await r.json();
+    catalog = d;
+    let total = 0;
+    zonesEl.innerHTML = '';
+    for (const z of d.zones) {
+      total += z.entries.length;
+      const div = document.createElement('div');
+      div.className = 'zone' + (z.zone === 'suspect' ? ' suspect' : '');
+      let html = '<h2>' + z.label + '（' + z.entries.length + ' 条）</h2>';
+      if (z.zone === 'suspect') html += '<div class="warn">⚠ 该区知识未经原理验证，使用时请自行判断风险。</div>';
+      if (z.entries.length === 0) html += '<div class="warn">暂无条目</div>';
+      div.innerHTML = html;
+      for (const e of z.entries) {
+        const item = document.createElement('label');
+        item.className = 'entry';
+        item.innerHTML = '<input type="checkbox" value="' + e.id + '" onchange="onCheck(this)">' +
+          '<span class="tag">' + z.label + ' · ' + e.id + '</span>' +
+          '<span class="body"><b>' + esc(e.title) + '</b>' +
+          '<div class="sum">' + esc(e.summary) + '</div></span>';
+        div.appendChild(item);
+      }
+      zonesEl.appendChild(div);
+    }
+    badge.textContent = '共 ' + total + ' 条知识';
+  } catch (e) {
+    document.querySelector('main').innerHTML =
+      '<div class="closed"><h2>无法连接服务</h2><p>请确认知识库服务已启动。</p></div>';
+  }
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+
+function onCheck(cb) {
+  if (cb.checked) selected.add(cb.value); else selected.delete(cb.value);
+  document.getElementById('selcount').textContent = selected.size;
+  document.getElementById('selinfo').textContent = selected.size
+    ? '已勾选：' + [...selected].join('、') : '尚未勾选任何知识';
+  document.getElementById('submitBtn').disabled = selected.size === 0;
+}
+
+async function submitApply() {
+  const msg = document.getElementById('msg');
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  msg.className = ''; msg.textContent = '提交中…';
+  try {
+    const r = await fetch('/api/apply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        self_name: document.getElementById('self_name').value,
+        reason: document.getElementById('reason').value,
+        ids: [...selected]
+      })
+    });
+    const d = await r.json();
+    if (r.ok) {
+      msg.className = 'ok'; msg.textContent = d.msg || '已提交';
+      selected.clear();
+      document.querySelectorAll('input[type=checkbox]').forEach(c => c.checked = false);
+      onCheck({checked:false});
+    } else {
+      msg.className = 'err'; msg.textContent = d.detail || '提交失败';
+      btn.disabled = selected.size === 0;
+    }
+  } catch (e) {
+    msg.className = 'err'; msg.textContent = '网络错误';
+    btn.disabled = selected.size === 0;
+  }
+}
+load();
+</script>
+</body>
+</html>

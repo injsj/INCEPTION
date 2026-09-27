@@ -1,0 +1,15 @@
+{
+  "id": "P89",
+  "type": "python",
+  "zone": "suspect",
+  "title": "某性能调优手法",
+  "summary": "原理未明的提速手法",
+  "usage": "在热点函数前调用 setup()",
+  "experience": "实测提速 2 倍但原理未知",
+  "limitations": "未经原理验证，生产慎用",
+  "content": "...",
+  "experiences": [],
+  "created_at": "2026-09-23 13:23:40",
+  "updated_at": "2026-09-23 13:23:40",
+  "source": "admin"
+}

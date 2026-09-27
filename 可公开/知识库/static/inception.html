@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>INCEPTION</title>
+<link rel="icon" href="/static/inception.ico">
+<style>
+  /* ── INCEPTION · 高级黑 × 淡金之眼 ────────────────── */
+  :root {
+    --bg-0: #08080a;            /* 最深的黑（非纯黑） */
+    --bg-1: #0b0b0e;
+    --bg-2: #121218;            /* 微亮的炭黑 */
+    --panel: #141419;
+    --line: #232329;
+    --line-soft: #1b1b21;
+    --gold: #d9c28a;            /* 淡金·注视之眼 */
+    --gold-dim: #8a7a52;
+    --gold-glow: rgba(217,194,138,.45);
+    --white: #ece7dd;           /* 高级白（暖） */
+    --text: #d6d2c8;
+    --dim: #84806f;
+    --err: #b3554a;
+    --serif: Georgia, "Times New Roman", "STSong", "SimSun", serif;
+    --mono: "Courier New", Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(ellipse at 50% 28%, #131319 0%, var(--bg-1) 52%, var(--bg-0) 100%);
+    overflow: hidden;
+  }
+  /* ── 框架 ── */
+  #app { display: grid; grid-template-columns: 232px 1fr; grid-template-rows: 100vh; height: 100vh; }
+  aside {
+    background: linear-gradient(180deg, var(--bg-2), var(--bg-1));
+    border-right: 1px solid var(--line-soft);
+    display: flex; flex-direction: column; padding: 22px 16px; gap: 4px;
+    min-height: 0;   /* grid 项默认 min-height:auto 会被内容撑爆，必须归零 */
+  }
+  .brand { display: flex; align-items: center; gap: 12px; padding-bottom: 18px;
+    border-bottom: 1px solid var(--line-soft); margin-bottom: 16px; }
+  .brand .name { font-family: var(--serif); font-size: 15px; letter-spacing: 5px; color: var(--white); }
+  .brand .sub { font-size: 10px; color: var(--dim); letter-spacing: 2.5px; margin-top: 3px; }
+  .nav {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px; font-size: 13px;
+    color: var(--dim); cursor: pointer; border-left: 2px solid transparent;
+    letter-spacing: 2px; user-select: none;
+  }
+  .nav:hover { color: var(--text); background: rgba(217,194,138,.05); }
+  .nav.on { color: var(--gold); border-left-color: var(--gold); background: rgba(217,194,138,.06); }
+  .nav .dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: .7; }
+  aside .foot { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--line-soft);
+    font-size: 11px; color: var(--dim); letter-spacing: 1px; line-height: 2; }
+  aside .foot .st { color: var(--gold-dim); }
+  /* ── 切片（最近记录=切片列表本身，变更 #27）── */
+  #slices { margin-top: 14px; flex: 1; overflow-y: auto; min-height: 0; }
+  #slices .h { font-size: 11px; color: var(--dim); letter-spacing: 2px; margin-bottom: 6px;
+    display: flex; justify-content: space-between; align-items: center; }
+  #sliceNew { cursor: pointer; color: var(--gold-dim); font-size: 14px; padding: 0 4px; }
+  #sliceNew:hover { color: var(--gold); }
+  #slices .sl { font-size: 12px; padding: 5px 10px; border-left: 2px solid var(--line);
+    margin-bottom: 3px; color: #9a9484; cursor: pointer; }
+  #slices .sl:hover { color: var(--text); }
+  #slices .sl.on { border-left-color: var(--gold); color: var(--gold); }
+  #slices .sl .row1 { display: flex; justify-content: space-between; align-items: center; }
+  #slices .sl .cnt { color: var(--dim); font-size: 10px; margin-left: 4px; }
+  #slices .sl .pv { font-size: 10px; color: #5d594f; margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #slices .sl.on .pv { color: var(--gold-dim); }
+  #slices .sl .ops { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  #slices .sl-m { font-size: 10px; color: var(--dim); display: flex; align-items: center; gap: 3px;
+    cursor: pointer; }
+  #slices .sl-m input { accent-color: var(--gold-dim); width: 11px; height: 11px; margin: 0; }
+  #slices .sl .del { color: #5d594f; font-size: 12px; padding: 0 2px; cursor: pointer; }
+  #slices .sl .del:hover { color: #b04a3c; }
+  #slices .hint-m { font-size: 10px; color: #5d594f; padding: 2px 10px 6px; }
+  /* ── 回收站（删除的切片留 1 天，可恢复/彻底删）── */
+  #trashBox { margin-top: 8px; padding: 0 10px; }
+  #trashToggle { font-size: 10px; color: #5d594f; cursor: pointer; }
+  #trashToggle:hover { color: var(--gold-dim); }
+  #trashList .ti { font-size: 11px; color: #6f6c62; padding: 4px 0;
+    display: flex; justify-content: space-between; align-items: center; gap: 4px; }
+  #trashList .ti .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #trashList .ti .cnt { color: var(--dim); font-size: 10px; }
+  #trashList .ti button { background: none; border: none; color: var(--gold-dim);
+    font-size: 10px; cursor: pointer; padding: 0 2px; }
+  #trashList .ti button:hover { color: var(--gold); }
+  #trashList .ti button.pu:hover { color: #b04a3c; }
+  /* ── 主区 ── */
+  main { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  #topbar {
+    position: relative; height: 52px; border-bottom: 1px solid var(--line-soft);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  /* 标题让位到左侧，正中央留给眼睛（运行状态指示） */
+  #topbar .ttl { position: absolute; left: 18px; font-family: var(--serif); font-size: 12px; letter-spacing: 6px; color: var(--dim); }
+  /* 顶栏眼睛：对话框上边框正中央（注意：HTML 的 id 选择器区分大小写，
+     此处必须是驼峰 topEye——小写 topeye 永远匹配不上，眼睛曾因此偏左） */
+  #topEye { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); }
+  /* ── 中央舞台（待机大眼）── */
+  #stage {
+    position: absolute; inset: 52px 0 0 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 26px; z-index: 5;
+    background: radial-gradient(ellipse at 50% 42%, rgba(217,194,138,.05), transparent 55%);
+    transition: opacity .8s ease;
+  }
+  #stage.away { opacity: 0; pointer-events: none; }
+  #stage .name { font-family: var(--serif); font-size: 21px; letter-spacing: 14px; color: var(--white); text-indent: 14px; }
+  #stage .hint { font-size: 12px; color: var(--dim); letter-spacing: 3px; }
+  /* ── 眼睛通用 ── */
+  .eye-wrap { position: relative; }
+  .eye { display: block; overflow: visible; }
+  .eye .outline { fill: none; stroke-width: 2.4; }
+  .eye .iris { fill: none; stroke-width: 1.6; opacity: .85; }
+  .eye .pupil { stroke: none; }
+  .eye .lid { fill: none; stroke-width: 2.2; stroke-linecap: round; }
+  .eye-gold .outline { stroke: var(--gold); filter: drop-shadow(0 0 9px var(--gold-glow)); }
+  .eye-gold .iris { stroke: var(--gold); }
+  .eye-gold .pupil { fill: var(--gold); filter: drop-shadow(0 0 6px var(--gold-glow)); }
+  .eye-gold .lid { stroke: var(--gold-dim); }
+  .eye-white .outline { stroke: var(--white); filter: drop-shadow(0 0 6px rgba(236,231,221,.35)); }
+  .eye-white .iris { stroke: var(--white); }
+  .eye-white .pupil { fill: var(--white); filter: drop-shadow(0 0 4px rgba(236,231,221,.4)); }
+  .eye-white .lid { stroke: #6a655c; }
+  .eye-inner { transform-origin: 50% 50%; transition: transform .28s ease; }
+  @keyframes breathe {
+    0%, 100% { opacity: .82; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.022); }
+  }
+  .breathing { animation: breathe 4.6s ease-in-out infinite; }
+  /* 碎裂画布 */
+  #shatter { position: absolute; inset: 0; z-index: 8; pointer-events: none; display: none; }
+  /* ── 聊天流 ── */
+  #chat { flex: 1; min-height: 0; overflow-y: auto; padding: 26px 0 12px; }
+  #chat .col { max-width: 760px; margin: 0 auto; padding: 0 26px; }
+  .m { margin-bottom: 22px; }
+  .m .who { font-size: 10.5px; letter-spacing: 3px; color: var(--dim); margin-bottom: 6px; font-family: var(--serif); }
+  .m .txt { font-size: 14px; line-height: 1.85; white-space: pre-wrap; word-break: break-word; }
+  .m.user .txt { color: var(--white); }
+  .m.ai .txt { color: var(--text); border-left: 2px solid var(--gold-dim); padding-left: 14px; }
+  .m .time { font-size: 10px; color: #4d4b44; margin-top: 5px; letter-spacing: 1px; }
+  /* 思考过程折叠面板 */
+  .trace { margin-top: 8px; }
+  .trace summary {
+    cursor: pointer; font-size: 11px; color: var(--gold-dim); letter-spacing: 2px;
+    user-select: none; list-style: none;
+  }
+  .trace summary::before { content: "◉ "; }
+  .trace[open] summary::before { content: "◎ "; }
+  .trace .tbody {
+    margin-top: 8px; border: 1px solid var(--line-soft); border-radius: 3px;
+    background: rgba(18,18,24,.6); padding: 10px 14px; font-size: 12px; line-height: 1.8;
+  }
+  .trace .k { color: var(--dim); font-size: 11px; letter-spacing: 1px; }
+  .trace .v { color: #b5b0a2; }
+  .trace pre { font-family: var(--mono); font-size: 11px; color: #9a958a; white-space: pre-wrap; word-break: break-all; margin-top: 4px; }
+  /* 推理过程（人话思考链）：主角，可读优先 */
+  .trace .tk { color: #c9a552; font-size: 11px; letter-spacing: 2px; margin-bottom: 6px; }
+  .trace .tsteps { border-left: 1px solid #4a4232; padding-left: 12px; margin-bottom: 10px; }
+  .trace .tstep { display: flex; gap: 9px; padding: 4px 0; align-items: baseline; }
+  .trace .tno {
+    flex: none; width: 18px; height: 18px; line-height: 18px; text-align: center;
+    border: 1px solid #6b5a3a; color: #c9a552; border-radius: 50%; font-size: 11px;
+  }
+  .trace .ttext { color: #ddd5c2; font-size: 13px; line-height: 1.7; }
+  /* ── 输入区 ── */
+  #inputbar { flex-shrink: 0; padding: 14px 26px 20px; }
+  #inputbar .box {
+    max-width: 760px; margin: 0 auto; display: flex; gap: 10px; align-items: flex-end;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px;
+  }
+  #inputbar .box:focus-within { border-color: var(--gold-dim); }
+  #in {
+    flex: 1; background: transparent; border: 0; outline: 0; resize: none;
+    color: var(--white); font-size: 14px; line-height: 1.7; font-family: inherit;
+    max-height: 140px; min-height: 24px;
+  }
+  #in::placeholder { color: #55524a; letter-spacing: 1px; }
+  #send {
+    background: transparent; border: 1px solid var(--gold-dim); color: var(--gold);
+    border-radius: 3px; padding: 7px 20px; font-size: 13px; letter-spacing: 3px; cursor: pointer;
+  }
+  #send:hover { background: rgba(217,194,138,.1); }
+  #send:disabled { border-color: var(--line); color: var(--dim); cursor: default; }
+  /* ── 设置页 ── */
+  #settings { display: none; flex: 1; min-height: 0; overflow-y: auto; padding: 30px 0; }
+  #settings .col { max-width: 640px; margin: 0 auto; padding: 0 26px; }
+  #settings h2 { font-family: var(--serif); letter-spacing: 6px; font-size: 20px; color: var(--white); margin-bottom: 20px; }
+  .scard { border: 1px solid var(--line-soft); border-radius: 4px; padding: 18px 20px; margin-bottom: 16px; background: rgba(18,18,24,.5); }
+  .scard h3 { font-size: 13px; letter-spacing: 2px; color: var(--gold); margin-bottom: 10px; font-family: var(--serif); }
+  .scard p { font-size: 12.5px; color: var(--dim); line-height: 1.9; }
+  .scard input { width: 100%; background: var(--bg-1); border: 1px solid var(--line); color: var(--white);
+    border-radius: 3px; padding: 9px 12px; font-size: 13px; margin: 8px 0; }
+  .scard button { border: 1px solid var(--gold-dim); background: transparent; color: var(--gold);
+    border-radius: 3px; padding: 8px 18px; font-size: 12.5px; letter-spacing: 2px; cursor: pointer; margin-right: 8px; }
+  .scard button:hover { background: rgba(217,194,138,.1); }
+  .scard button.plain { border-color: var(--line); color: var(--text); }
+  /* ── 登录罩 ── */
+  #lock {
+    position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at 50% 35%, #131319, var(--bg-0) 70%);
+    flex-direction: column; gap: 22px;
+  }
+  #lock input {
+    width: 300px; background: var(--panel); border: 1px solid var(--line); color: var(--white);
+    border-radius: 3px; padding: 11px 14px; font-size: 13px; text-align: center; outline: 0;
+  }
+  #lock input:focus { border-color: var(--gold-dim); }
+  #lock button { border: 1px solid var(--gold-dim); background: transparent; color: var(--gold);
+    padding: 10px 34px; letter-spacing: 4px; font-size: 13px; border-radius: 3px; cursor: pointer; }
+  #lock .lmsg { color: var(--err); font-size: 12px; letter-spacing: 1px; }
+  #lock .lname { font-family: var(--serif); font-size: 17px; letter-spacing: 10px; color: var(--white); text-indent: 10px; }
+  /* ── 错误条 ── */
+  #errbar {
+    position: absolute; top: 64px; left: 50%; transform: translateX(-50%); z-index: 9;
+    display: none; align-items: center; gap: 12px;
+    border: 1px solid var(--err); color: #d08a80; background: rgba(20,12,11,.92);
+    font-size: 12.5px; letter-spacing: 1px; padding: 9px 18px; border-radius: 3px;
+  }
+  #errbar button { background: transparent; border: 1px solid var(--err); color: #d08a80;
+    border-radius: 3px; padding: 4px 14px; font-size: 12px; cursor: pointer; letter-spacing: 1px; }
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-thumb { background: #232329; border-radius: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  @media (max-width: 720px) {
+    #app { grid-template-columns: 1fr; }
+    aside { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="lock" style="display:none">
+  <div class="lname">INCEPTION</div>
+  <div class="eye-wrap" id="lockEye"></div>
+  <input id="lockKey" type="password" placeholder="管理员密钥" autocomplete="off" onkeydown="if(event.key==='Enter')unlock()">
+  <div style="display:flex; gap:10px;">
+    <button onclick="unlock()">唤 醒</button>
+    <button onclick="pasteKey()" title="从剪贴板读入密钥">粘 贴</button>
+  </div>
+  <div class="lmsg" id="lockMsg"></div>
+</div>
+
+<div id="app" style="display:none">
+<aside>
+  <div class="brand">
+    <div class="eye-wrap" id="brandEye"></div>
+    <div><div class="name">INCEPTION</div><div class="sub">注 视 之 眼</div></div>
+  </div>
+  <div class="nav on" data-v="chat" onclick="showView('chat')"><span class="dot"></span>对话</div>
+  <div class="nav" onclick="window.open('/static/admin.html','_blank')"><span class="dot"></span>知识库藏书阁</div>
+  <div class="nav" onclick="window.open('/static/catalog.html','_blank')"><span class="dot"></span>知识库目录</div>
+  <div class="nav" data-v="settings" onclick="showView('settings')"><span class="dot"></span>设置</div>
+  <div id="slices"><div class="h">切片 · 最近记录<span id="sliceNew" title="新建切片">＋</span></div>
+    <div class="hint-m">勾「合并」= 让它同时看到那几个切片的记录</div>
+    <div id="sliceList"></div>
+    <div id="trashBox"><span id="trashToggle" onclick="toggleTrash()">回收站 (0) ▾</span>
+      <div id="trashList" style="display:none"></div></div></div>
+  <div class="foot">
+    轮数 <span class="st" id="rounds">–</span><br>
+    状态 <span class="st" id="conn">待机</span>
+  </div>
+</aside>
+
+<main>
+  <div id="topbar">
+    <div class="ttl" id="topTitle">INCEPTION</div>
+    <div class="eye-wrap" id="topEye"></div>
+  </div>
+
+  <div id="errbar"><span id="errtext"></span><button onclick="retryLast()">重试</button></div>
+
+  <!-- 中央舞台：待机时淡金大眼注视 -->
+  <div id="stage">
+    <div class="eye-wrap breathing" id="centerEye"></div>
+    <div class="name">INCEPTION</div>
+    <div class="hint">它 在 看 着 · 说 点 什 么</div>
+  </div>
+  <canvas id="shatter"></canvas>
+
+  <div id="chat"><div class="col" id="chatCol"></div></div>
+
+  <div id="settings">
+    <div class="col">
+      <h2>设置</h2>
+      <div class="scard">
+        <h3>密钥</h3>
+        <p>聊天与管理端共用管理员密钥（仅本机）。更换密钥后重新唤醒即可。</p>
+        <button class="plain" onclick="relock()">重新输入密钥</button>
+      </div>
+      <div class="scard">
+        <h3>知识库管理</h3>
+        <p>审批、授权、录入、日志——藏书阁是另一个世界（米黄胡桃木）。</p>
+        <button onclick="window.open('/static/admin.html','_blank')">打开知识库藏书阁</button>
+        <button class="plain" onclick="window.open('/static/catalog.html','_blank')">打开知识库目录</button>
+      </div>
+      <div class="scard">
+        <h3>它眼中的你（用户模型）</h3>
+        <p>稳定层从长期统计归纳、状态层只反映最近一轮；每个变量都带出处。只用于让它更会答你。</p>
+        <pre id="usermodel" style="white-space:pre-wrap;font-size:12px;color:var(--dim);margin:0">（加载中）</pre>
+      </div>
+      <div class="scard">
+        <h3>关于 INCEPTION</h3>
+        <p>符号 AI 的桌面面孔。眼睛即生命体征：<br>
+        中央淡金之眼 = 待机注视；顶栏之眼睁开 = 思考中，闭合 = 无任务；<br>
+        眼睛碎裂飘落 = 系统错误。每条回复下的「思考过程」是它的完整脑内档案。</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="inputbar">
+    <div class="box">
+      <textarea id="in" rows="1" placeholder="对 INCEPTION 说……（Enter 发送，Shift+Enter 换行）"></textarea>
+      <button id="send" onclick="send()">发送</button>
+    </div>
+  </div>
+</main>
+</div>
+
+<script>
+/* ═══════════ 眼睛引擎 ═══════════ */
+const EYE_SIZES = { center: 190, top: 30, brand: 34, lock: 120 };
+
+/* 注意：不能用 <use href="#eyeDef"> 引用 defs——use 的克隆在影子树里，
+   querySelector 摸不到，瞳孔/眼皮会全部失效。每只眼睛内联真实 DOM。 */
+const EYE_INNER = `<path class="outline" d="M50 6 C25 42 25 98 50 134 C75 98 75 42 50 6 Z"/>
+    <g class="eye-ball">
+      <circle class="iris" cx="50" cy="70" r="21"/>
+      <circle class="pupil" cx="50" cy="70" r="8.5"/>
+    </g>
+    <path class="lid" d="M31 70 Q50 87 69 70" style="display:none"/>`;
+
+function makeEye(el, size, theme) {
+  /* theme: 'gold' | 'white' */
+  el.innerHTML = `<svg class="eye eye-${theme}" width="${size}" height="${size * 1.4}" viewBox="0 0 100 140">
+    <g class="eye-inner">${EYE_INNER}</g></svg>`;
+  const svg = el.querySelector('svg');
+  return {
+    el, svg,
+    inner: svg.querySelector('.eye-inner'),
+    ball: svg.querySelector('.eye-ball'),
+    pupil: svg.querySelector('.pupil'),
+    lid: svg.querySelector('.lid'),
+    openEye() { this.ball.style.display = ''; this.lid.style.display = 'none';
+      this.inner.style.transform = 'scaleY(1)'; },
+    closeEye() { this.ball.style.display = 'none'; this.lid.style.display = ''; },
+    blink() { this.inner.style.transform = 'scaleY(.06)';
+      setTimeout(() => this.inner.style.transform = 'scaleY(1)', 150); },
+    look(nx, ny) { /* nx,ny ∈ [-1,1] */
+      this.pupil.setAttribute('cx', 50 + nx * 9);
+      this.pupil.setAttribute('cy', 70 + ny * 12); }
+  };
+}
+
+let centerEye = null, topEye = null, brandEye = null, lockEye = null;
+let curState = 'center';   // center | busy | idle | error
+let lastErr = '';
+
+/* 瞳孔追踪：让中央眼睛真正"注视着人" */
+document.addEventListener('mousemove', e => {
+  if (curState !== 'center' || !centerEye) return;
+  const r = centerEye.svg.getBoundingClientRect();
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  const nx = Math.max(-1, Math.min(1, (e.clientX - cx) / 320));
+  const ny = Math.max(-1, Math.min(1, (e.clientY - cy) / 320));
+  centerEye.look(nx, ny);
+});
+
+/* 随机慢眨眼（待机时） */
+setInterval(() => {
+  if (curState === 'center' && centerEye && Math.random() < .55) centerEye.blink();
+}, 3800);
+
+function setState(s) {
+  curState = s;
+  const stage = document.getElementById('stage');
+  if (s !== 'error') {   /* 从错误态恢复：两只眼睛都可能被碎裂隐藏过 */
+    if (topEye) topEye.svg.style.visibility = '';
+    if (centerEye) centerEye.svg.style.visibility = '';
+  }
+  if (s === 'center') {
+    stage.classList.remove('away');
+    centerEye.openEye();
+    document.getElementById('conn').textContent = '待机注视';
+  } else if (s === 'busy') {
+    stage.classList.add('away');
+    topEye.openEye();
+    document.getElementById('conn').textContent = '思考中';
+  } else if (s === 'idle') {
+    stage.classList.add('away');
+    topEye.closeEye();
+    document.getElementById('conn').textContent = '无任务';
+  } else if (s === 'error') {
+    document.getElementById('conn').textContent = '系统错误';
+    shatterEye();
+  }
+}
+
+/* ── 碎裂：眼睛化作发光碎片向下飘落 ── */
+function shatterEye() {
+  const cv = document.getElementById('shatter');
+  const main = document.querySelector('main');
+  cv.width = main.clientWidth; cv.height = main.clientHeight;
+  cv.style.display = 'block';
+  const ctx = cv.getContext('2d');
+  /* 碎的是顶栏眼睛（聊天态）或中央眼睛（待机态）；粒子颜色与被碎之眼一致 */
+  const useCenter = !document.getElementById('stage').classList.contains('away');
+  const src = useCenter ? centerEye : topEye;
+  const r = src.svg.getBoundingClientRect(), mr = main.getBoundingClientRect();
+  const ox = r.left - mr.left, oy = r.top - mr.top;
+  src.svg.style.visibility = 'hidden';
+  const gold = useCenter;
+  const ps = [];
+  const n = Math.min(520, Math.max(180, Math.round(r.width * r.height / 6)));
+  for (let i = 0; i < n; i++) {
+    ps.push({
+      x: ox + Math.random() * r.width,
+      y: oy + Math.random() * r.height,
+      vx: (Math.random() - .5) * .9,
+      vy: Math.random() * .8 - .3,
+      s: Math.random() * 2.2 + .8,
+      a: 1,
+      decay: Math.random() * .008 + .004
+    });
+  }
+  let frames = 0;
+  (function tick() {
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    let alive = false;
+    for (const p of ps) {
+      if (p.a <= 0) continue;
+      alive = true;
+      p.vy += .045;               /* 重力：向下飘落 */
+      p.x += p.vx; p.y += p.vy;
+      p.a -= p.decay;
+      ctx.globalAlpha = Math.max(0, p.a);
+      ctx.shadowBlur = 6;
+      ctx.shadowColor = gold ? 'rgba(217,194,138,.8)' : 'rgba(236,231,221,.7)';
+      ctx.fillStyle = gold ? '#d9c28a' : '#ece7dd';
+      ctx.fillRect(p.x, p.y, p.s, p.s);
+    }
+    frames++;
+    if (alive && frames < 600) requestAnimationFrame(tick);
+    else { cv.style.display = 'none'; ctx.clearRect(0, 0, cv.width, cv.height); }
+  })();
+}
+
+/* ═══════════ 视图切换 ═══════════ */
+function showView(v) {
+  document.querySelectorAll('.nav[data-v]').forEach(n => n.classList.toggle('on', n.dataset.v === v));
+  document.getElementById('settings').style.display = v === 'settings' ? 'block' : 'none';
+  document.getElementById('chat').style.display = v === 'chat' ? '' : 'none';
+  document.getElementById('inputbar').style.display = v === 'chat' ? '' : 'none';
+  document.getElementById('stage').style.display = v === 'chat' ? '' : 'none';
+  if (v === 'settings') loadUsermodel();
+}
+
+async function loadUsermodel() {
+  try {
+    const d = await api('/admin/api/inception/usermodel');
+    document.getElementById('usermodel').textContent = d.ok ? d.text : ('读取失败：' + (d.error || ''));
+  } catch (e) {
+    document.getElementById('usermodel').textContent = '读取失败：' + e.message;
+  }
+}
+
+/* ═══════════ 登录 ═══════════ */
+let AK = sessionStorage.getItem('ak') || '';
+
+function bootLock() {
+  const lock = document.getElementById('lock');
+  lock.style.display = 'flex';
+  if (!lockEye) { lockEye = makeEye(document.getElementById('lockEye'), EYE_SIZES.lock, 'gold'); lockEye.openEye(); }
+  setTimeout(() => document.getElementById('lockKey').focus(), 60);
+}
+/* 粘贴按钮：桌面壳走 pywebview 原生通道（Windows 剪贴板直读）；
+   浏览器里先查权限再读，读不了就给出明确指引，绝不卡死页面。 */
+async function pasteKey() {
+  const msg = document.getElementById('lockMsg');
+  const inp = document.getElementById('lockKey');
+  try {
+    if (window.pywebview && pywebview.api && pywebview.api.get_clipboard) {
+      const t = await pywebview.api.get_clipboard();
+      if (t && t.trim()) { inp.value = t.trim(); msg.textContent = ''; }
+      else msg.textContent = '剪贴板是空的——先复制密钥再点我';
+      return;
+    }
+  } catch (e) { /* 落入浏览器通道 */ }
+  try {
+    const st = await navigator.permissions.query({ name: 'clipboard-read' });
+    if (st.state !== 'granted') {
+      msg.textContent = '这个窗口不允许读剪贴板：点一下输入框按 Ctrl+V，或手动输入';
+      return;
+    }
+    const t = await Promise.race([
+      navigator.clipboard.readText(),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 2500))
+    ]);
+    if (t && t.trim()) { inp.value = t.trim(); msg.textContent = ''; }
+    else msg.textContent = '剪贴板是空的——先复制密钥再点我';
+  } catch (e) {
+    msg.textContent = '读取失败：点一下输入框按 Ctrl+V，或手动输入';
+  }
+}
+function unlock() {
+  AK = document.getElementById('lockKey').value.trim();
+  api('/admin/api/inception/history?n=1').then(() => {
+    sessionStorage.setItem('ak', AK);
+    document.getElementById('lock').style.display = 'none';
+    start();
+  }).catch(e => { document.getElementById('lockMsg').textContent = e.message; });
+}
+function relock() { sessionStorage.removeItem('ak'); AK = ''; location.reload(); }
+
+async function api(path, opts = {}) {
+  opts.headers = Object.assign({ 'X-Admin-Key': AK, 'Content-Type': 'application/json' }, opts.headers || {});
+  const r = await fetch(path, opts);
+  if (r.status === 401) { relockSilent(); throw new Error('密钥无效'); }
+  if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.detail || d.error || ('错误 ' + r.status)); }
+  return r.json();
+}
+function relockSilent() { sessionStorage.removeItem('ak'); AK = ''; location.reload(); }
+
+/* ═══════════ 聊天 ═══════════ */
+let lastText = '';
+
+const TRACE_LABEL = {
+  thinking: '推理过程', lang: '语言', act: '对话行为', decision: '决策', confidence: '置信度',
+  candidates: '意图候选', unknown_words: '生词', fired_reminders: '触发的提醒',
+  reason_trace: '推演规则链', prediction: '预测存档', verified: '预测验证',
+  scan_order: '注意力扫描序', batch: '本轮调度批次', suggestions: '新建议',
+  trained: '权重训练', exec_status: '执行状态', atomic_op: '原子操作',
+  kb_down: '知识库断连', resource: '资源状态', open_events: '未完成事件', archive: '档案'
+};
+
+function fmtTrace(tr) {
+  const rows = [];
+  // 推理过程（人话思考链）置顶，逐步编号展示——这是主角，其余是技术档案
+  if (Array.isArray(tr.thinking) && tr.thinking.length) {
+    const steps = tr.thinking.map((s, i) =>
+      `<div class="tstep"><span class="tno">${i + 1}</span><span class="ttext">${esc(s)}</span></div>`).join('');
+    rows.push(`<div class="tk">推理过程</div><div class="tsteps">${steps}</div>`);
+  }
+  for (const k in TRACE_LABEL) {
+    if (k === 'thinking' || !(k in tr)) continue;
+    const v = tr[k];
+    let s;
+    if (k === 'confidence') s = (v * 100).toFixed(0) + '%';
+    else if (k === 'candidates') s = v.map(c => `${c.note}（${((c.conf ?? c.score ?? 0) * 100).toFixed(0)}%）`).join(' / ');
+    else if (k === 'batch') s = v.map(b => `${b.id}·${b.type}·${b.score.toFixed(1)}`).join('，');
+    else if (typeof v === 'object') s = JSON.stringify(v, null, 1);
+    else s = String(v);
+    rows.push(`<div><span class="k">${TRACE_LABEL[k]}　</span><span class="v">${esc(s)}</span></div>`);
+  }
+  return rows.join('');
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+
+function addMsg(role, text, trace, time) {
+  const col = document.getElementById('chatCol');
+  const div = document.createElement('div');
+  div.className = 'm ' + role;
+  const who = role === 'user' ? '你' : 'INCEPTION';
+  let trHtml = '';
+  if (trace && Object.keys(trace).length) {
+    trHtml = `<details class="trace"><summary>思考过程</summary><div class="tbody">${fmtTrace(trace)}</div></details>`;
+  }
+  div.innerHTML = `<div class="who">${who}</div><div class="txt">${esc(text)}</div>${trHtml}` +
+    (time ? `<div class="time">${esc(time)}</div>` : '');
+  col.appendChild(div);
+  const chat = document.getElementById('chat');
+  chat.scrollTop = chat.scrollHeight;
+  return div;
+}
+
+function send() { doSend(document.getElementById('in').value); }
+
+async function doSend(text) {
+  text = (text || '').trim();
+  if (!text) return;
+  lastText = text;
+  const inp = document.getElementById('in'), btn = document.getElementById('send');
+  inp.value = ''; inp.style.height = 'auto';
+  hideErr();
+  addMsg('user', text, null, new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }));
+  setState('busy');
+  btn.disabled = true;
+  try {
+    const d = await api('/admin/api/inception/chat', { method: 'POST', body: JSON.stringify({ text }) });
+    if (!d.ok) throw new Error(d.error || '未知错误');
+    addMsg('ai', d.reply, d.trace, new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }));
+    document.getElementById('rounds').textContent = d.round;
+    setState('idle');
+    loadSlices();   // 发完话刷新切片列表（预览/计数/排序跟随最近活跃）
+  } catch (e) {
+    lastErr = String(e.message || e);
+    setState('error');
+    showErr('系统错误：' + lastErr);
+  }
+  btn.disabled = false;
+  inp.focus();
+}
+
+function retryLast() {
+  hideErr();
+  if (topEye) topEye.svg.style.visibility = '';
+  if (centerEye) centerEye.svg.style.visibility = '';
+  setState(document.getElementById('chatCol').children.length ? 'idle' : 'center');
+  if (lastText) doSend(lastText);
+}
+function showErr(t) { document.getElementById('errtext').textContent = t; document.getElementById('errbar').style.display = 'flex'; }
+function hideErr() { document.getElementById('errbar').style.display = 'none'; }
+
+/* ── 历史恢复 + 侧栏最近记录 ── */
+let SLICE_NAMES = {};
+async function loadHistory() {
+  const d = await api('/admin/api/inception/history?n=20');
+  document.getElementById('rounds').textContent = d.round;
+  const items = d.items || [];
+  const col = document.getElementById('chatCol');
+  col.innerHTML = '';
+  const showTag = (d.merged || []).length > 0;   // 合并视图才标切片来源
+  for (let i = 0; i + 1 < items.length; i += 2) {
+    const u = items[i], a = items[i + 1];
+    if (u.role !== 'user' || a.role !== 'ai') continue;
+    const tag = showTag && u.slice && u.slice !== d.active && SLICE_NAMES[u.slice]
+      ? '〔' + SLICE_NAMES[u.slice] + '〕' : '';
+    addMsg('user', tag + u.text, null, (u.time || '').slice(11, 16));
+    // 思考链随历史回放（存档在 history 项里，对话结束不再消失）
+    addMsg('ai', a.text, (a.thinking && a.thinking.length) ? { thinking: a.thinking } : null,
+           (a.time || '').slice(11, 16));
+  }
+  setState(items.length ? 'idle' : 'center');
+}
+
+/* ── 切片式聊天：多分区 + 勾选合并上下文（变更 #27：最近记录=切片列表本身）── */
+async function loadSlices() {
+  try {
+    const d = await api('/admin/api/inception/slices');
+    if (!d.ok) return;
+    SLICE_NAMES = Object.fromEntries(d.slices.map(s => [s.id, s.name]));
+    const rows = [...d.slices].sort((a, b) => (b.last_time || '').localeCompare(a.last_time || ''));
+    document.getElementById('sliceList').innerHTML = rows.map(s => `
+      <div class="sl ${s.id === d.active ? 'on' : ''}" onclick="switchSlice('${s.id}')">
+        <div class="row1">
+          <span>${esc(s.name)}<span class="cnt">${s.count}</span></span>
+          <span class="ops" onclick="event.stopPropagation()">
+            ${s.id !== d.active ? `<label class="sl-m">
+              <input type="checkbox" ${(d.merged || []).includes(s.id) ? 'checked' : ''}
+                onchange="toggleMerge('${s.id}', this.checked)">合并</label>` : ''}
+            ${s.id !== 'main' ? `<span class="del" title="删除切片（对话并入主切片）"
+              onclick="delSlice('${s.id}', '${esc(s.name).replace(/'/g, "\\'")}')">×</span>` : ''}
+          </span>
+        </div>
+        ${s.last ? `<div class="pv">${esc(s.last)}</div>` : ''}
+      </div>`).join('');
+  } catch (e) { /* 切片加载失败静默 */ }
+}
+async function switchSlice(id) {
+  await api('/admin/api/inception/slices/active', { method: 'POST', body: JSON.stringify({ id }) });
+  await loadSlices(); loadHistory();
+}
+async function toggleMerge(id, on) {
+  const d = await api('/admin/api/inception/slices');
+  const m = new Set(d.merged || []); on ? m.add(id) : m.delete(id);
+  await api('/admin/api/inception/slices/merged', { method: 'POST', body: JSON.stringify({ ids: [...m] }) });
+  await loadSlices(); loadHistory();
+}
+async function newSlice() {
+  let name = '';
+  try { name = window.prompt('新切片的名字（可空，自动命名）', '') || ''; } catch (e) { /* WebView2 可能无 prompt */ }
+  await api('/admin/api/inception/slices/new', { method: 'POST', body: JSON.stringify({ name }) });
+  await loadSlices(); loadHistory();
+}
+async function delSlice(id, name) {
+  /* 删除切片：进回收站留 1 天，期间可恢复或立即彻底删（用户拍板） */
+  try { if (!window.confirm('删除切片「' + name + '」？留回收站 1 天，可恢复。')) return; }
+  catch (e) { /* WebView2 可能无 confirm，直接执行 */ }
+  await api('/admin/api/inception/slices/del', { method: 'POST', body: JSON.stringify({ id }) });
+  await loadSlices(); loadHistory(); loadTrash();
+}
+/* ── 回收站 ── */
+async function loadTrash() {
+  try {
+    const d = await api('/admin/api/inception/slices/trash');
+    const items = d.items || [];
+    document.getElementById('trashToggle').textContent = '回收站 (' + items.length + ') ▾';
+    document.getElementById('trashList').innerHTML = items.map(it => `
+      <div class="ti"><span class="nm">${esc(it.name)}<span class="cnt">${it.count}条·${(it.deleted_at||'').slice(5,16)}</span></span>
+        <span><button onclick="restoreSlice('${it.sid}')">恢复</button><button class="pu" onclick="purgeSlice('${it.sid}','${esc(it.name).replace(/'/g, "\\'")}')">彻底删</button></span>
+      </div>`).join('') || '<div class="ti"><span class="nm">（空）</span></div>';
+  } catch (e) { /* 回收站加载失败静默 */ }
+}
+function toggleTrash() {
+  const el = document.getElementById('trashList');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  if (el.style.display === 'block') loadTrash();
+}
+async function restoreSlice(sid) {
+  await api('/admin/api/inception/slices/restore', { method: 'POST', body: JSON.stringify({ id: sid }) });
+  await loadSlices(); loadHistory(); loadTrash();
+}
+async function purgeSlice(sid, name) {
+  try { if (!window.confirm('彻底删除「' + name + '」？它的对话记录将永远消失，找不回。')) return; }
+  catch (e) { /* 无 confirm 环境直接执行 */ }
+  await api('/admin/api/inception/slices/purge', { method: 'POST', body: JSON.stringify({ id: sid }) });
+  loadTrash();
+}
+
+/* ═══════════ 启动 ═══════════ */
+function start() {
+  document.getElementById('app').style.display = 'grid';
+  centerEye = makeEye(document.getElementById('centerEye'), EYE_SIZES.center, 'gold');
+  topEye = makeEye(document.getElementById('topEye'), EYE_SIZES.top, 'white');
+  brandEye = makeEye(document.getElementById('brandEye'), EYE_SIZES.brand, 'gold');
+  centerEye.openEye(); topEye.closeEye(); brandEye.openEye();
+  document.getElementById('topTitle').style.visibility = 'hidden';
+  showView('chat');
+  document.getElementById('sliceNew').onclick = newSlice;
+  loadSlices(); loadTrash();
+  loadHistory().catch(e => { setState('error'); showErr('系统错误：' + e.message); });
+  const inp = document.getElementById('in');
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+  });
+  inp.addEventListener('input', () => { inp.style.height = 'auto'; inp.style.height = Math.min(inp.scrollHeight, 140) + 'px'; });
+  inp.focus();
+}
+
+if (AK) {
+  api('/admin/api/inception/history?n=1').then(start).catch(() => { sessionStorage.removeItem('ak'); AK = ''; bootLock(); });
+} else {
+  bootLock();
+}
+</script>
+</body>
+</html>

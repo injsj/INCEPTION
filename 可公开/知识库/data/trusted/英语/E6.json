@@ -1,0 +1,15 @@
+{
+  "id": "E6",
+  "type": "英语",
+  "zone": "trusted",
+  "title": "英语基本句型",
+  "summary": "五种基本句型是所有句子的骨架",
+  "usage": "造句先选骨架再添枝叶",
+  "experience": "主谓宾 = 谁 + 做 + 什么，最常用",
+  "limitations": "双宾语与宾补初中只要求辨认",
+  "content": "五种基本句型：\n1. 主 + 谓（不及物动词）：He runs.\n2. 主 + 谓 + 宾：I like English.\n3. 主 + 系 + 表：She is happy.（系动词 be、look、feel、become 等）\n4. 主 + 谓 + 间接宾语 + 直接宾语：He gave me a book.（= gave a book to me）\n5. 主 + 谓 + 宾 + 宾补：We call him Tom.\n此外还有 There be 句型表存在。",
+  "experiences": [],
+  "created_at": "2026-09-23 21:25:13",
+  "updated_at": "2026-09-23 21:25:13",
+  "source": "admin"
+}

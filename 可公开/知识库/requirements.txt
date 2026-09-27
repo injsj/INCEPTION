@@ -1,0 +1,3 @@
+fastapi>=0.110
+uvicorn>=0.29
+requests>=2.31  # 仅 selftest.py 端到端自检使用

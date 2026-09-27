@@ -1,0 +1,15 @@
+{
+  "id": "E4",
+  "type": "英语",
+  "zone": "trusted",
+  "title": "一般现在时与现在进行时",
+  "summary": "经常做用一般现在时，正在做用进行时",
+  "usage": "判断时间状语选时态",
+  "experience": "三单最容易丢 s：He likes，不是 He like",
+  "limitations": "进行时动词加 ing：双写（run→running）、去e（make→making）",
+  "content": "一般现在时：表示经常性、习惯性动作或客观真理。标志词：always、usually、often、every day。\n结构：主语 + 动词原形（第三人称单数加 s/es：He plays football.）。\n现在进行时：表示正在进行的动作。标志词：now、look、listen。\n结构：主语 + be + 动词 ing。I am reading now.\n动词 ing 变化：直接加（read→reading）；去不发音 e 加（write→writing）；重读闭音节双写尾字母加（run→running，swim→swimming）。",
+  "experiences": [],
+  "created_at": "2026-09-23 21:25:13",
+  "updated_at": "2026-09-23 21:25:13",
+  "source": "admin"
+}

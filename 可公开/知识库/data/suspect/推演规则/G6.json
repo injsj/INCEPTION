@@ -1,0 +1,15 @@
+{
+  "id": "G6",
+  "type": "推演规则",
+  "zone": "suspect",
+  "title": "截止不足十分钟紧迫度高",
+  "summary": "事件截止不足十分钟时紧迫度为高档",
+  "usage": "当[截止分钟<10]→则[紧迫度=高]档[高]域[逻辑]",
+  "experience": "对账命中 0 次 / 落空 0 次（AI 自动累计）",
+  "limitations": "通用",
+  "content": "",
+  "experiences": [],
+  "created_at": "2026-09-22 22:43:44",
+  "updated_at": "2026-09-22 22:43:44",
+  "source": "admin"
+}

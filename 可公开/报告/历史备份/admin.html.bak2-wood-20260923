@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>知识库管理 · 账房</title>
+<style>
+  /* ── 深色胡桃木 × 米黄宣纸 · 设计令牌 ─────────────── */
+  :root {
+    --wood-bg: #211810;       /* 页面底·深胡桃 */
+    --wood-panel: #2b1f12;    /* 侧边栏·木面 */
+    --wood-card: #332617;     /* 深底上的木板 */
+    --wood-line: #4e3a1d;     /* 木纹描边 */
+    --wood-dark: #170f08;     /* 木缝 */
+    --paper: #f2e9cf;         /* 宣纸 */
+    --paper-2: #ebdfba;       /* 旧宣纸 */
+    --paper-line: #c6b288;    /* 纸面框线 */
+    --paper-hair: #ddd0aa;    /* 纸面发丝线 */
+    --brass: #b8912f;         /* 黄铜（扁平） */
+    --brass-dark: #8f6f1f;
+    --seal: #8e3524;          /* 朱砂印 */
+    --pine: #44553f;          /* 松烟墨绿 */
+    --amber: #96662a;         /* 琥珀（存疑） */
+    --cream: #e9dcb6;         /* 木面上的米字 */
+    --cream-dim: #a3905f;     /* 木面上的暗米字 */
+    --ink: #2b2114;           /* 纸上墨字 */
+    --ink-dim: #77653f;       /* 纸上淡墨 */
+    --serif: Georgia, "Times New Roman", "STSong", "SimSun", serif;
+    --mono: "Courier New", Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    color: var(--cream); min-height: 100vh;
+    background:
+      repeating-linear-gradient(93deg, rgba(0,0,0,.13) 0 2px, transparent 2px 8px),
+      repeating-linear-gradient(87deg, rgba(120,90,40,.06) 0 1px, transparent 1px 13px),
+      radial-gradient(ellipse at 25% 0%, rgba(184,145,47,.05), transparent 55%),
+      var(--wood-bg);
+  }
+  /* ── 朱砂印章 ── */
+  .seal {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 48px; height: 48px; background: var(--seal); color: #f3e7c6;
+    font-family: var(--serif); font-size: 25px; font-weight: 700;
+    border: 2px solid #6f2818; border-radius: 3px; transform: rotate(-2.5deg);
+    box-shadow: inset 0 0 0 2px rgba(243,231,198,.4);
+    user-select: none;
+  }
+  .seal.small { width: 36px; height: 36px; font-size: 18px; }
+  /* ── 登录 ── */
+  #login {
+    max-width: 400px; margin: 110px auto; background: var(--paper); color: var(--ink);
+    border: 1px solid var(--paper-line); border-radius: 3px;
+    box-shadow: inset 0 0 0 4px var(--paper), inset 0 0 0 5px var(--paper-hair), 0 10px 0 rgba(0,0,0,.28);
+    padding: 36px 34px 30px; text-align: center;
+  }
+  #login h2 { font-family: var(--serif); font-size: 23px; letter-spacing: 8px; margin: 18px 0 2px; text-indent: 8px; }
+  #login .rule { width: 60px; margin: 12px auto 16px; border-top: 1px solid var(--brass-dark); border-bottom: 1px solid var(--paper-hair); height: 3px; }
+  #login .sub { color: var(--ink-dim); font-size: 12px; margin-bottom: 20px; letter-spacing: 1px; }
+  #login input { width: 100%; margin-bottom: 14px; text-align: center; }
+  #login button { width: 100%; padding: 11px; font-size: 14px; letter-spacing: 6px; text-indent: 6px; }
+  #loginmsg { margin-top: 10px; }
+  /* ── 主框架：木面侧栏 + 工作区 ── */
+  #panel { display: grid; grid-template-columns: 224px 1fr; min-height: 100vh; }
+  aside {
+    background:
+      repeating-linear-gradient(90deg, rgba(0,0,0,.16) 0 3px, transparent 3px 26px),
+      repeating-linear-gradient(91deg, rgba(120,90,40,.07) 0 1px, transparent 1px 17px),
+      var(--wood-panel);
+    border-right: 1px solid var(--wood-line);
+    box-shadow: inset -2px 0 0 var(--wood-dark);
+    padding: 24px 14px; display: flex; flex-direction: column; gap: 3px;
+    position: sticky; top: 0; height: 100vh;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; padding: 2px 8px 18px; margin-bottom: 14px;
+    border-bottom: 1px solid var(--wood-line); box-shadow: 0 1px 0 var(--wood-dark); }
+  .brand h1 { font-family: var(--serif); font-size: 17px; color: var(--paper); letter-spacing: 3px; }
+  .brand .sub { font-size: 11px; color: var(--cream-dim); letter-spacing: 4px; margin-top: 2px; }
+  .nav {
+    display: flex; align-items: baseline; gap: 10px; padding: 10px 12px;
+    color: var(--cream-dim); font-size: 14px; cursor: pointer;
+    font-family: var(--serif); letter-spacing: 2px;
+    border-left: 3px solid transparent; user-select: none;
+  }
+  .nav .no { font-size: 11px; color: var(--brass-dark); font-family: var(--serif); }
+  .nav:hover { color: var(--cream); background: rgba(184,145,47,.08); }
+  .nav.on {
+    color: var(--paper); background: rgba(23,15,8,.55);
+    border-left-color: var(--brass);
+    box-shadow: inset 0 0 0 1px var(--wood-line);
+  }
+  .nav.on .no { color: var(--brass); }
+  .nav .badge {
+    margin-left: auto; background: var(--seal); color: #f3e7c6; font-size: 11px;
+    font-family: var(--mono); border-radius: 2px; padding: 1px 7px; min-width: 18px; text-align: center;
+  }
+  aside .foot { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--wood-line); box-shadow: 0 -1px 0 var(--wood-dark); }
+  main { padding: 28px 34px 90px; max-width: 1060px; }
+  .pagehead { display: flex; align-items: baseline; gap: 14px; margin-bottom: 20px; padding-bottom: 10px;
+    border-bottom: 3px double var(--wood-line); }
+  .pagehead h2 { font-family: var(--serif); font-size: 24px; color: var(--paper); letter-spacing: 6px; }
+  .pagehead .hint { font-size: 12px; color: var(--cream-dim); letter-spacing: 1px; }
+  /* ── 宣纸卡片（线装书框）── */
+  .card {
+    background: var(--paper); color: var(--ink);
+    border: 1px solid var(--paper-line); border-radius: 2px;
+    box-shadow: inset 0 0 0 3px var(--paper), inset 0 0 0 4px var(--paper-hair), 0 3px 0 rgba(0,0,0,.25);
+    padding: 18px 20px; margin-bottom: 18px;
+  }
+  .card h3 {
+    font-family: var(--serif); font-size: 15px; letter-spacing: 3px; color: var(--ink);
+    margin-bottom: 12px; padding-bottom: 8px; border-bottom: 3px double var(--paper-line);
+  }
+  .card h3::before { content: "§ "; color: var(--brass-dark); }
+  /* ── 账簿总览 ── */
+  .ledger { background: var(--paper); color: var(--ink); border: 1px solid var(--paper-line); border-radius: 2px;
+    box-shadow: inset 0 0 0 3px var(--paper), inset 0 0 0 4px var(--paper-hair), 0 3px 0 rgba(0,0,0,.25);
+    padding: 6px 20px; margin-bottom: 18px; }
+  .lrow { display: flex; align-items: baseline; padding: 11px 0; border-bottom: 1px solid var(--paper-hair); }
+  .lrow:last-child { border-bottom: 0; }
+  .lrow .k { font-size: 13.5px; letter-spacing: 2px; }
+  .lrow .v { margin-left: auto; font-family: var(--serif); font-size: 22px; color: var(--ink); }
+  .lrow.hot .v { color: var(--seal); font-weight: 700; }
+  .lrow.hot .k::after { content: " · 待裁"; color: var(--seal); font-size: 11.5px; letter-spacing: 1px; }
+  /* ── 控件：扁平、锐利 ── */
+  button {
+    background: var(--brass); color: #241a08;
+    border: 1px solid var(--brass-dark); border-radius: 2px;
+    padding: 7px 18px; font-size: 13px; letter-spacing: 2px; font-weight: 600;
+    cursor: pointer; margin: 2px 4px 2px 0;
+  }
+  button:hover { background: #c69f38; }
+  button:active { transform: translateY(1px); }
+  button.warn { background: var(--amber); color: #f5ead0; border-color: #6e4a1c; }
+  button.warn:hover { background: #a6752f; }
+  button.danger { background: var(--seal); color: #f3e7c6; border-color: #6f2818; }
+  button.danger:hover { background: #9d3f2b; }
+  button.good { background: var(--pine); color: #eef0da; border-color: #33402f; }
+  button.good:hover { background: #4f6549; }
+  button.ghost { background: transparent; color: var(--brass-dark); border: 1px solid var(--brass-dark); }
+  button.ghost:hover { background: rgba(184,145,47,.12); }
+  button:disabled { background: #8d8468; color: #5d563f; border-color: #7a7159; cursor: default; }
+  input, select, textarea {
+    background: #faf3dd; border: 1px solid #bfa97a; color: var(--ink);
+    border-radius: 2px; padding: 7px 10px; font-size: 13px; font-family: inherit; margin: 3px 4px 3px 0;
+  }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--brass); outline-offset: 0; }
+  textarea { width: 100%; min-height: 70px; resize: vertical; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 8px; }
+  th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--paper-hair); vertical-align: top; }
+  th {
+    color: var(--ink-dim); font-weight: 600; font-size: 12px; letter-spacing: 2px;
+    font-family: var(--serif); border-bottom: 1.5px solid var(--paper-line);
+  }
+  tr:hover td { background: rgba(184,145,47,.07); }
+  .tag { font-family: var(--mono); color: var(--pine); font-weight: 700; letter-spacing: .5px; }
+  .muted { color: var(--ink-dim); font-size: 12px; }
+  .pill {
+    display: inline-block; font-size: 11.5px; border-radius: 2px; padding: 2px 10px;
+    letter-spacing: 1px; border: 1px solid;
+  }
+  .pill.wait { color: #7c5314; border-color: #b8912f; background: rgba(184,145,47,.14); }
+  .pill.done { color: var(--pine); border-color: var(--pine); background: rgba(68,85,63,.1); }
+  .pill.no { color: var(--seal); border-color: var(--seal); background: rgba(142,53,36,.08); }
+  .msg { font-size: 13px; margin-top: 8px; }
+  .msg.ok { color: var(--pine); } .msg.err { color: var(--seal); }
+  .keybox {
+    background: var(--paper-2); border: 1px solid var(--pine); border-radius: 2px; padding: 14px 16px;
+    margin-top: 12px; word-break: break-all; color: var(--pine);
+    font-family: var(--mono); font-size: 13.5px;
+    box-shadow: inset 0 0 0 3px var(--paper-2), inset 0 0 0 4px rgba(68,85,63,.35);
+  }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 6px 0; }
+  h4 { font-size: 13px; color: var(--ink); margin: 14px 0 4px; letter-spacing: 2px; font-family: var(--serif); }
+  /* ── 请求卡片 ── */
+  .reqcard { border: 1px solid var(--paper-line); border-radius: 2px; padding: 12px 15px; margin: 10px 0; background: #f7efdb; }
+  .reqcard .body { margin: 8px 0; font-size: 12.5px; white-space: pre-wrap; line-height: 1.7; }
+  .reqcard details summary { color: var(--ink-dim); cursor: pointer; font-size: 12px; letter-spacing: 1px; }
+  .groupbox { border: 1px solid var(--paper-line); border-radius: 2px; margin: 10px 0; background: #f5ecd4; }
+  .groupbox summary { padding: 9px 13px; cursor: pointer; font-size: 13px; letter-spacing: 1px; }
+  .groupbox .inner { padding: 0 12px 8px; }
+  pre.logbox {
+    font-size: 11.5px; white-space: pre-wrap; word-break: break-all; font-family: var(--mono);
+    background: var(--wood-bg); color: #c9b586; padding: 12px; border-radius: 2px;
+    max-height: 320px; overflow: auto; margin: 8px 0; border: 1px solid var(--wood-line);
+  }
+  /* ── Toast ── */
+  #toasts { position: fixed; top: 18px; right: 18px; z-index: 99; display: flex; flex-direction: column; gap: 8px; }
+  .toast {
+    background: var(--wood-panel); border: 1px solid var(--wood-line); color: var(--cream);
+    border-left: 3px solid var(--brass); border-radius: 2px; padding: 10px 16px; font-size: 13px;
+    letter-spacing: 1px; box-shadow: 3px 3px 0 rgba(0,0,0,.3); animation: tin .2s ease; max-width: 380px;
+  }
+  .toast.err { border-left-color: var(--seal); }
+  @keyframes tin { from { transform: translateX(24px); opacity: 0; } }
+  /* ── Modal ── */
+  dialog {
+    background: var(--paper); color: var(--ink); border: 1px solid var(--paper-line);
+    border-radius: 3px; padding: 0; width: 450px; max-width: 92vw;
+    box-shadow: inset 0 0 0 3px var(--paper), inset 0 0 0 4px var(--paper-hair), 0 14px 0 rgba(0,0,0,.3);
+  }
+  dialog::backdrop { background: rgba(16,11,6,.68); }
+  dialog .mhead {
+    font-family: var(--serif); font-size: 16px; letter-spacing: 3px;
+    padding: 14px 20px; border-bottom: 3px double var(--paper-line);
+  }
+  dialog .mbody { padding: 14px 20px; font-size: 13px; line-height: 1.75; }
+  dialog .mbody label { display: block; font-size: 12px; color: var(--ink-dim); margin: 8px 0 2px; letter-spacing: 1px; }
+  dialog .mbody input, dialog .mbody textarea, dialog .mbody select { width: 100%; }
+  dialog .mfoot { padding: 12px 20px 16px; text-align: right; }
+  @media (max-width: 760px) {
+    #panel { grid-template-columns: 1fr; }
+    aside { position: static; height: auto; flex-direction: row; flex-wrap: wrap; }
+    .brand { border: 0; box-shadow: none; padding-bottom: 4px; }
+    aside .foot { margin: 0; border: 0; box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="toasts"></div>
+
+<!-- 通用模态框 -->
+<dialog id="modal">
+  <div class="mhead" id="m_title"></div>
+  <div class="mbody" id="m_body"></div>
+  <div class="mfoot">
+    <button class="ghost" onclick="closeModal(null)">取消</button>
+    <button id="m_ok">确定</button>
+  </div>
+</dialog>
+
+<div id="login">
+  <span class="seal">管</span>
+  <h2>知识库管理</h2>
+  <div class="rule"></div>
+  <div class="sub">仅本机 · 管理员密钥（X-Admin-Key）</div>
+  <input id="ak" type="password" placeholder="请出示管理员密钥">
+  <button onclick="login()">入 账 房</button>
+  <div class="sub" style="margin-top:14px;margin-bottom:0">密钥在首次启动服务时生成且仅显示一次；<br>丢失可在本机用 CLI 重置（见使用说明）。</div>
+  <div id="loginmsg" class="msg err"></div>
+</div>
+
+<div id="panel" style="display:none">
+<aside>
+  <div class="brand">
+    <span class="seal small">知</span>
+    <div><h1>知识库管理</h1><div class="sub">账 房 总 柜</div></div>
+  </div>
+  <div class="nav on" data-page="overview" onclick="showPage('overview')"><span class="no">壹</span>总览与开关</div>
+  <div class="nav" data-page="approve" onclick="showPage('approve')"><span class="no">贰</span>审批中心<span class="badge" id="bdg_approve" style="display:none"></span></div>
+  <div class="nav" data-page="entries" onclick="showPage('entries')"><span class="no">叁</span>知识管理</div>
+  <div class="nav" data-page="keys" onclick="showPage('keys')"><span class="no">肆</span>密钥与授权</div>
+  <div class="nav" data-page="types" onclick="showPage('types')"><span class="no">伍</span>类型管理</div>
+  <div class="nav" data-page="logs" onclick="showPage('logs')"><span class="no">陆</span>日志</div>
+  <div class="foot"><button class="danger" style="width:100%" onclick="logout()">退出登录</button></div>
+</aside>
+
+<main>
+<!-- ═══ 总览 ═══ -->
+<section id="pg_overview">
+  <div class="pagehead"><h2>总览与开关</h2><span class="hint">进门先看账：有没有事等你裁决</span></div>
+  <div class="ledger">
+    <div class="lrow" id="lr_app"><span class="k">待审访问申请</span><span class="v" id="ov_app">–</span></div>
+    <div class="lrow" id="lr_req"><span class="k">待审 AI 申请</span><span class="v" id="ov_req">–</span></div>
+    <div class="lrow"><span class="k">信任区典藏</span><span class="v" id="ov_t">–</span></div>
+    <div class="lrow"><span class="k">存疑区典藏</span><span class="v" id="ov_s">–</span></div>
+    <div class="lrow"><span class="k">待审核区典藏</span><span class="v" id="ov_p">–</span></div>
+  </div>
+  <div class="card">
+    <h3>总开关</h3>
+    <div class="row"><span>服务总开关：</span><span class="pill" id="st_enabled"></span>
+      <button onclick="toggle('enabled')">切换</button></div>
+    <div class="row"><span>对外访问：</span><span class="pill" id="st_remote"></span>
+      <button onclick="toggle('allow_remote')">切换</button>
+      <span class="muted">（重启服务生效）</span></div>
+    <div class="row"><span>目录公开：</span><span class="pill" id="st_catalog"></span>
+      <button onclick="toggle('catalog_public')">切换</button></div>
+  </div>
+</section>
+
+<!-- ═══ 审批中心 ═══ -->
+<section id="pg_approve" style="display:none">
+  <div class="pagehead"><h2>审批中心</h2><span class="hint">你是唯一裁决者：访问申请与 AI 的 REQ 都在这里</span></div>
+  <div class="card">
+    <h3>访问申请（人类访问方）</h3>
+    <button class="ghost" onclick="loadApps()">刷新</button>
+    <div id="apps"></div>
+    <div id="appkey"></div>
+  </div>
+  <div class="card">
+    <h3>AI 申请区（REQ）</h3>
+    <button class="ghost" onclick="loadReqs()">刷新</button>
+    <div class="muted" style="margin:6px 0">「修改知识 / 新增知识」请在 CLI（python admin_cli.py）逐字段确认后执行；移区与追加经验可在此一键执行。</div>
+    <div id="reqs"></div>
+  </div>
+</section>
+
+<!-- ═══ 知识管理 ═══ -->
+<section id="pg_entries" style="display:none">
+  <div class="pagehead"><h2>知识管理</h2><span class="hint">序号只增不减；废弃留历史备份</span></div>
+  <div class="card">
+    <h3>条目列表</h3>
+    <div class="row">
+      <select id="q_zone" onchange="loadEntries()">
+        <option value="">全部分区</option><option value="trusted">信任区</option>
+        <option value="suspect">存疑区</option><option value="pending">待审核区</option>
+      </select>
+      <button class="ghost" onclick="loadEntries()">刷新列表</button>
+    </div>
+    <div id="entries"></div>
+  </div>
+  <div class="card">
+    <h3>新增知识（普通文本输入，程序自动分配标记）</h3>
+    <div class="row">
+      <select id="ne_zone"><option value="pending">待审核区</option><option value="trusted">信任区</option><option value="suspect">存疑区</option></select>
+      <select id="ne_type"></select>
+    </div>
+    <input id="ne_title" placeholder="标题" style="width:100%"><br>
+    <input id="ne_summary" placeholder="简介（目录公开显示）" style="width:100%"><br>
+    <textarea id="ne_usage" placeholder="详细使用方法"></textarea>
+    <textarea id="ne_experience" placeholder="详细使用经验"></textarea>
+    <textarea id="ne_limitations" placeholder="局限性"></textarea>
+    <textarea id="ne_content" placeholder="正文 / 示例代码（受保护）"></textarea>
+    <button class="good" onclick="createEntry()">入库</button>
+    <div id="nemsg" class="msg"></div>
+  </div>
+  <div id="editArea"></div>
+</section>
+
+<!-- ═══ 密钥与授权 ═══ -->
+<section id="pg_keys" style="display:none">
+  <div class="pagehead"><h2>密钥与授权</h2><span class="hint">密钥只存哈希、只显示一次；吊销 ≤1 秒生效</span></div>
+  <div class="card">
+    <h3>现有密钥</h3>
+    <button class="ghost" onclick="loadKeys()">刷新</button>
+    <div id="keys"></div>
+  </div>
+  <div class="card">
+    <h3>追加授权 / 临时授权 / 收回</h3>
+    <div class="row">
+      <input id="gk_name" placeholder="访问方名称" style="width:130px">
+      <input id="gk_ids" placeholder="标记，逗号分隔（P1,L2）" style="width:210px">
+      <button class="good" onclick="grant()">追加授权</button>
+    </div>
+    <div class="row">
+      <input id="tk_hours" type="number" value="24" style="width:70px"> 小时
+      <button onclick="tempGrant()">对待审核区标记临时授权</button>
+    </div>
+    <div class="row">
+      <button class="warn" onclick="revokeId()">收回上方第一个标记</button>
+      <button class="danger" onclick="revokeKey()">吊销该访问方</button>
+    </div>
+    <div id="keymsg" class="msg"></div>
+  </div>
+</section>
+
+<!-- ═══ 类型管理 ═══ -->
+<section id="pg_types" style="display:none">
+  <div class="pagehead"><h2>类型管理</h2><span class="hint">类型 = 字母前缀 + 名称（如 P → python）</span></div>
+  <div class="card">
+    <div id="types" class="muted"></div>
+    <div class="row" style="margin-top:10px">
+      <input id="ty_name" placeholder="类型名（python）">
+      <input id="ty_prefix" placeholder="字母（P）" style="width:90px">
+      <button class="good" onclick="addType()">添加</button>
+    </div>
+    <div id="tymsg" class="msg"></div>
+  </div>
+</section>
+
+<!-- ═══ 日志 ═══ -->
+<section id="pg_logs" style="display:none">
+  <div class="pagehead"><h2>日志</h2><span class="hint">哈希链审计：任何一行被改都会断裂报警</span></div>
+  <div class="card">
+    <div class="row">
+      <select id="log_kind"><option value="access">access（调用）</option><option value="admin">admin（管理）</option></select>
+      <button onclick="loadLogs()">查看最近 50 条</button>
+      <button class="ghost" onclick="verifyLogs()">校验哈希链</button>
+      <button class="ghost" onclick="toggleLogFlat()" id="logflat">平铺显示</button>
+    </div>
+    <div id="logmsg" class="msg"></div>
+    <div id="logbox" style="margin-top:8px"></div>
+  </div>
+</section>
+</main>
+</div>
+
+<script>
+let AK = sessionStorage.getItem('ak') || '';
+const $ = id => document.getElementById(id);
+// 第二轮审查 L7：所有进 HTML 的外部值必须经 esc() 转义——这是 XSS 防线，不得绕过
+const esc = s => { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; };
+const msg = (id, t, ok) => { const e = $(id); e.className = 'msg ' + (ok ? 'ok' : 'err'); e.textContent = t; };
+
+/* ── Toast ── */
+function toast(text, ok = true) {
+  const t = document.createElement('div');
+  t.className = 'toast' + (ok ? '' : ' err');
+  t.textContent = text;
+  $('toasts').appendChild(t);
+  setTimeout(() => t.remove(), 3600);
+}
+
+/* ── 通用模态框：fields [{key,label,type,options,placeholder,value}] ── */
+let _modalResolve = null;
+function openModal({ title, body = '', fields = [], okText = '确定', danger = false }) {
+  return new Promise(resolve => {
+    _modalResolve = resolve;
+    $('m_title').textContent = title;
+    let html = body ? `<div style="margin-bottom:6px">${body}</div>` : '';
+    for (const f of fields) {
+      html += `<label>${esc(f.label)}</label>`;
+      if (f.type === 'select') {
+        html += `<select id="mf_${f.key}">` + f.options.map(o =>
+          `<option value="${esc(o.v)}">${esc(o.t)}</option>`).join('') + '</select>';
+      } else if (f.type === 'textarea') {
+        html += `<textarea id="mf_${f.key}" placeholder="${esc(f.placeholder || '')}">${esc(f.value || '')}</textarea>`;
+      } else {
+        html += `<input id="mf_${f.key}" placeholder="${esc(f.placeholder || '')}" value="${esc(f.value || '')}">`;
+      }
+    }
+    $('m_body').innerHTML = html;
+    const ok = $('m_ok');
+    ok.textContent = okText;
+    ok.className = danger ? 'danger' : '';
+    ok.onclick = () => {
+      const values = {};
+      for (const f of fields) values[f.key] = $('mf_' + f.key).value;
+      closeModal(values);
+    };
+    $('modal').showModal();
+  });
+}
+function closeModal(values) {
+  $('modal').close();
+  if (_modalResolve) { _modalResolve(values); _modalResolve = null; }
+}
+$('modal').addEventListener('cancel', () => closeModal(null));
+
+/* ── API ── */
+async function api(path, opts = {}) {
+  opts.headers = Object.assign({ 'X-Admin-Key': AK, 'Content-Type': 'application/json' }, opts.headers || {});
+  const r = await fetch(path, opts);
+  if (r.status === 401) { logout(); throw new Error('登录失效'); }
+  if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.detail || ('错误 ' + r.status)); }
+  return r.json();
+}
+
+function login() {
+  AK = $('ak').value.trim();
+  api('/admin/api/state').then(() => {
+    sessionStorage.setItem('ak', AK);
+    $('login').style.display = 'none'; $('panel').style.display = 'grid';
+    init();
+  }).catch(e => { $('loginmsg').textContent = e.message; });
+}
+function logout() { sessionStorage.removeItem('ak'); AK = ''; location.reload(); }
+if (AK) { $('ak').value = AK; login(); }
+
+async function init() { await refreshState(); await loadTypes(); showPage('overview'); }
+const ZONE = { trusted: '信任区', suspect: '存疑区', pending: '待审核区' };
+
+/* ── 导航 ── */
+const PAGES = { overview: '总览与开关', approve: '审批中心', entries: '知识管理', keys: '密钥与授权', types: '类型管理', logs: '日志' };
+async function showPage(name) {
+  document.querySelectorAll('.nav').forEach(n => n.classList.toggle('on', n.dataset.page === name));
+  for (const p in PAGES) $('pg_' + p).style.display = p === name ? '' : 'none';
+  if (name === 'approve') { loadApps(); loadReqs(); }
+  if (name === 'entries') loadEntries();
+  if (name === 'keys') loadKeys();
+  if (name === 'logs') loadLogs();
+}
+
+/* ── 总览 ── */
+function setPill(id, on, onText, offText) {
+  const e = $(id);
+  e.textContent = on ? onText : offText;
+  e.className = 'pill ' + (on ? 'done' : 'no');
+}
+async function refreshState() {
+  const s = await api('/admin/api/state');
+  setPill('st_enabled', s.enabled, '开', '关（禁止一切访问）');
+  setPill('st_remote', s.allow_remote, '开', '关（仅本机）');
+  setPill('st_catalog', s.catalog_public, '公开', '隐藏');
+  const o = await api('/admin/api/overview');
+  $('ov_app').textContent = o.applications_pending;
+  $('ov_req').textContent = o.reqs_pending;
+  $('ov_t').textContent = o.counts.trusted;
+  $('ov_s').textContent = o.counts.suspect;
+  $('ov_p').textContent = o.counts.pending;
+  $('lr_app').classList.toggle('hot', o.applications_pending > 0);
+  $('lr_req').classList.toggle('hot', o.reqs_pending > 0);
+  const total = o.applications_pending + o.reqs_pending;
+  $('bdg_approve').style.display = total ? '' : 'none';
+  $('bdg_approve').textContent = total;
+}
+async function toggle(k) {
+  const cur = $(k === 'enabled' ? 'st_enabled' : k === 'allow_remote' ? 'st_remote' : 'st_catalog').textContent;
+  const body = {}; body[k] = !(cur.startsWith('开') || cur.startsWith('公开'));
+  try { const r = await api('/admin/api/state', { method: 'POST', body: JSON.stringify(body) }); refreshState();
+    if (r.note) toast(r.note, true); } catch (e) { toast(e.message, false); }
+}
+
+/* ── 访问申请 ── */
+async function loadApps() {
+  const d = await api('/admin/api/applications');
+  const pend = d.applications.filter(a => a.status === '待审');
+  if (!pend.length) { $('apps').innerHTML = '<div class="muted" style="margin-top:8px">没有待审申请</div>'; return; }
+  $('apps').innerHTML = '<table><tr><th>#</th><th>自报名称</th><th>申请标记</th><th>理由</th><th>时间</th><th>操作</th></tr>' +
+    pend.map(a => `<tr><td>${a.n}</td><td>${esc(a.self_name)}</td><td class="tag">${a.ids.join(', ')}</td>
+      <td>${esc(a.reason)}</td><td class="muted">${a.time}</td>
+      <td><button class="good" onclick="approveApp(${a.n})">批准</button>
+      <button class="danger" onclick="rejectApp(${a.n})">拒绝</button></td></tr>`).join('') + '</table>';
+}
+async function approveApp(n) {
+  const r = await openModal({ title: '批准访问申请 #' + n,
+    body: '批准后生成该访问方的专属密钥，<b>仅此一次显示</b>。',
+    fields: [{ key: 'name', label: '为该访问方指定固定名称（唯一）', placeholder: '如：小明' }],
+    okText: '批准并签发密钥' });
+  if (!r || !r.name.trim()) return;
+  try {
+    const d = await api(`/admin/api/applications/${n}/approve`, { method: 'POST', body: JSON.stringify({ name: r.name.trim() }) });
+    $('appkey').innerHTML = `<div class="keybox">✅ 已批准「${esc(d.name)}」。密钥仅此一次显示，立即复制转交：<br><br>${esc(d.key)}<br><br><button onclick="copyKey(this)" data-k="${esc(d.key)}">复制密钥</button></div>`;
+    loadApps(); refreshState();
+  } catch (e) { toast(e.message, false); }
+}
+function copyKey(btn) {
+  navigator.clipboard.writeText(btn.dataset.k).then(() => toast('密钥已复制到剪贴板'));
+}
+async function rejectApp(n) {
+  const r = await openModal({ title: '拒绝访问申请 #' + n,
+    fields: [{ key: 'note', label: '拒绝原因（可空）', type: 'textarea' }], okText: '确认拒绝', danger: true });
+  if (!r) return;
+  try { await api(`/admin/api/applications/${n}/reject`, { method: 'POST', body: JSON.stringify({ note: r.note }) });
+    toast('已拒绝'); loadApps(); refreshState(); } catch (e) { toast(e.message, false); }
+}
+
+/* ── 密钥与授权 ── */
+async function loadKeys() {
+  const d = await api('/admin/api/keys');
+  $('keys').innerHTML = '<table><tr><th>名称</th><th>角色</th><th>授权标记</th><th>临时授权</th></tr>' +
+    d.keys.map(k => `<tr><td>${esc(k.name)}</td><td>${esc(k.role_name)}</td><td class="tag">${k.granted_ids.join(', ') || '（无）'}</td>
+      <td class="muted">${Object.entries(k.temp).map(([i, e]) => i + ' 至 ' + e).join('；') || '（无）'}</td></tr>`).join('') + '</table>';
+}
+async function grant() {
+  try { const d = await api('/admin/api/keys/grant', { method: 'POST', body: JSON.stringify({ name: $('gk_name').value.trim(), ids: $('gk_ids').value.split(',').map(s => s.trim().toUpperCase()).filter(Boolean) }) });
+    msg('keymsg', '已授权：' + d.granted.join(',') + (d.warnings.length ? '；注意：' + d.warnings.join('；') : ''), true); loadKeys();
+  } catch (e) { msg('keymsg', e.message, false); }
+}
+async function tempGrant() {
+  const ids = $('gk_ids').value.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+  try { await api('/admin/api/keys/temp', { method: 'POST', body: JSON.stringify({ name: $('gk_name').value.trim(), id: ids[0], hours: +$('tk_hours').value }) });
+    msg('keymsg', '已临时授权（仅对待审核区标记有效）', true); loadKeys();
+  } catch (e) { msg('keymsg', e.message, false); }
+}
+async function revokeId() {
+  const ids = $('gk_ids').value.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+  try { await api('/admin/api/keys/revoke-id', { method: 'POST', body: JSON.stringify({ name: $('gk_name').value.trim(), id: ids[0] }) });
+    msg('keymsg', '已收回（≤1 秒生效）', true); loadKeys();
+  } catch (e) { msg('keymsg', e.message, false); }
+}
+async function revokeKey() {
+  const name = $('gk_name').value.trim();
+  const r = await openModal({ title: '吊销访问方',
+    body: `确认吊销「<b>${esc(name)}</b>」？其密钥<b>立即失效</b>，不可恢复。`,
+    okText: '确认吊销', danger: true });
+  if (!r) return;
+  try { await api('/admin/api/keys/revoke', { method: 'POST', body: JSON.stringify({ name }) });
+    msg('keymsg', '已吊销', true); loadKeys(); } catch (e) { msg('keymsg', e.message, false); }
+}
+
+/* ── 类型 ── */
+async function loadTypes() {
+  const d = await api('/admin/api/types');
+  $('types').textContent = '现有类型：' + (d.types.map(t => `${t.prefix} → ${t.name}`).join('，') || '（无，请先添加）');
+  const escq = s => esc(s).replace(/"/g, '&quot;');
+  $('ne_type').innerHTML = d.types.map(t => `<option value="${escq(t.name)}">${esc(t.name)}（${esc(t.prefix)}）</option>`).join('');
+}
+async function addType() {
+  try { await api('/admin/api/types', { method: 'POST', body: JSON.stringify({ name: $('ty_name').value.trim(), prefix: $('ty_prefix').value.trim() }) });
+    msg('tymsg', '已添加', true); loadTypes();
+  } catch (e) { msg('tymsg', e.message, false); }
+}
+
+/* ── 知识管理 ── */
+async function loadEntries() {
+  const z = $('q_zone').value;
+  const d = await api('/admin/api/entries' + (z ? '?zone=' + z : ''));
+  $('entries').innerHTML = '<table><tr><th>标记</th><th>分区</th><th>标题</th><th>类型</th><th>操作</th></tr>' +
+    d.entries.map(e => `<tr><td class="tag">${e.id}</td><td><span class="pill ${e.zone === 'trusted' ? 'done' : e.zone === 'suspect' ? 'wait' : ''}">${ZONE[e.zone]}</span></td>
+      <td>${esc(e.title)}</td><td>${esc(e.type)}</td>
+      <td><button onclick="editEntry('${e.id}')">编辑</button>
+      <button onclick="moveEntry('${e.id}')">移区</button>
+      <button class="danger" onclick="delEntry('${e.id}')">废弃</button></td></tr>`).join('') + '</table>';
+}
+async function createEntry() {
+  try {
+    const d = await api('/admin/api/entries', { method: 'POST', body: JSON.stringify({
+      zone: $('ne_zone').value, type: $('ne_type').value,
+      title: $('ne_title').value, summary: $('ne_summary').value,
+      usage: $('ne_usage').value, experience: $('ne_experience').value,
+      limitations: $('ne_limitations').value, content: $('ne_content').value }) });
+    msg('nemsg', '已入库：' + d.id, true); toast('已入库：' + d.id);
+    ['ne_title','ne_summary','ne_usage','ne_experience','ne_limitations','ne_content'].forEach(i => $(i).value = '');
+    loadEntries(); refreshState();
+  } catch (e) { msg('nemsg', e.message, false); }
+}
+async function editEntry(id) {
+  const d = await api('/admin/api/entries/' + id);
+  const e = d.entry;
+  $('editArea').innerHTML = `<div class="card"><h3>编辑 ${id}（历史版本 ${d.history.length} 个）</h3>
+    <input id="ee_title" value="${esc(e.title).replace(/"/g,'&quot;')}" style="width:100%">
+    <textarea id="ee_summary">${esc(e.summary)}</textarea>
+    <textarea id="ee_usage">${esc(e.usage)}</textarea>
+    <textarea id="ee_experience">${esc(e.experience)}</textarea>
+    <textarea id="ee_limitations">${esc(e.limitations)}</textarea>
+    <textarea id="ee_content">${esc(e.content)}</textarea>
+    <button class="good" onclick="saveEntry('${id}')">保存修改</button>
+    ${d.history.length ? `<button class="ghost" onclick="rollbackEntry('${id}','${d.history[0]}')">回滚到最近历史版本</button>` : ''}</div>`;
+  $('editArea').scrollIntoView({ behavior: 'smooth' });
+}
+async function saveEntry(id) {
+  try {
+    await api('/admin/api/entries/' + id, { method: 'PUT', body: JSON.stringify({
+      title: $('ee_title').value, summary: $('ee_summary').value, usage: $('ee_usage').value,
+      experience: $('ee_experience').value, limitations: $('ee_limitations').value, content: $('ee_content').value }) });
+    toast('已保存'); $('editArea').innerHTML = ''; loadEntries();
+  } catch (e) { toast(e.message, false); }
+}
+async function moveEntry(id) {
+  const r = await openModal({ title: '移区 ' + id,
+    fields: [
+      { key: 'zone', label: '目标分区', type: 'select', options: [
+        { v: 'trusted', t: '信任区' }, { v: 'suspect', t: '存疑区' }, { v: 'pending', t: '待审核区' }] },
+      { key: 'note', label: '说明（可空）', type: 'textarea' }],
+    okText: '确认移区' });
+  if (!r) return;
+  try { await api(`/admin/api/entries/${id}/move`, { method: 'POST', body: JSON.stringify({ zone: r.zone, note: r.note }) });
+    toast('已移区'); loadEntries(); refreshState(); } catch (e) { toast(e.message, false); }
+}
+async function delEntry(id) {
+  const r = await openModal({ title: '废弃 ' + id,
+    body: `确认废弃 <b class="tag">${id}</b>？序号不会回收，历史备份保留。`,
+    fields: [{ key: 'reason', label: '废弃原因（可空）', type: 'textarea' }],
+    okText: '确认废弃', danger: true });
+  if (!r) return;
+  try { await api('/admin/api/entries/' + id, { method: 'DELETE', body: JSON.stringify({ reason: r.reason }) });
+    toast('已废弃 ' + id); loadEntries(); refreshState(); } catch (e) { toast(e.message, false); }
+}
+async function rollbackEntry(id, ver) {
+  const r = await openModal({ title: '回滚 ' + id,
+    body: `回滚到 <b class="tag">${esc(ver)}</b>？当前内容会先自动备份。`, okText: '确认回滚' });
+  if (!r) return;
+  try { await api(`/admin/api/entries/${id}/rollback`, { method: 'POST', body: JSON.stringify({ version: ver }) });
+    toast('已回滚'); $('editArea').innerHTML = ''; loadEntries(); } catch (e) { toast(e.message, false); }
+}
+
+/* ── AI 申请区 ── */
+function reqCard(r) {
+  const pending = r.status === '待审核';
+  const pillCls = pending ? 'wait' : r.status === '已执行' ? 'done' : 'no';
+  return `
+    <div class="reqcard">
+      <b class="tag">${r.id}</b> [${esc(r.action_name)}] ${esc(r.proposer)} → ${esc(r.target) || '（新增）'}
+      <span class="muted">${r.created_at}</span>
+      <span class="pill ${pillCls}">${esc(r.status)}</span>
+      ${r.admin_note ? `<span class="muted">意见：${esc(r.admin_note)}</span>` : ''}
+      <div class="body">${esc(r.proposal)}</div>
+      <details><summary>理由与证明过程</summary>
+        <div class="body"><b>理由：</b>${esc(r.reason)}\n\n<b>证明：</b>${esc(r.proof)}</div>
+      </details>
+      ${pending ? `<div class="row">
+        ${['move_zone','suspect_to_pending','append_experience'].includes(r.action) ?
+          `<button class="good" onclick="execReq('${r.id}','${r.action}')">一键执行</button>` :
+          `<span class="muted">此类型请用 CLI 逐字段确认</span>`}
+        <button class="danger" onclick="rejectReq('${r.id}')">拒绝</button>
+      </div>` : ''}
+    </div>`;
+}
+
+async function loadReqs() {
+  const d = await api('/admin/api/reqs');
+  if (!d.reqs.length) { $('reqs').innerHTML = '<div class="muted" style="margin-top:8px">还没有申请记录</div>'; return; }
+  const groups = {};
+  for (const r of d.reqs) (groups[r.proposer] = groups[r.proposer] || []).push(r);
+  const sorted = Object.entries(groups).sort((a, b) => {
+    const pa = a[1].some(r => r.status === '待审核') ? 0 : 1;
+    const pb = b[1].some(r => r.status === '待审核') ? 0 : 1;
+    return pa - pb || b[1].length - a[1].length;
+  });
+  $('reqs').innerHTML = sorted.map(([who, rs]) => {
+    const pend = rs.filter(r => r.status === '待审核').length;
+    return `
+    <details class="groupbox" ${pend ? 'open' : ''}>
+      <summary>${esc(who)}（共 ${rs.length} 条${pend ? `｜<span class="pill wait">待审 ${pend}</span>` : ''}）</summary>
+      <div class="inner">${rs.map(reqCard).join('')}</div>
+    </details>`;
+  }).join('');
+}
+async function execReq(id, action) {
+  const fields = [];
+  if (action === 'move_zone') fields.push({ key: 'zone', label: '目标分区', type: 'select',
+    options: [{ v: 'trusted', t: '信任区' }, { v: 'suspect', t: '存疑区' }] });
+  fields.push({ key: 'note', label: '处理意见（AI 可见，可空）', type: 'textarea' });
+  const r = await openModal({ title: '执行 ' + id, fields, okText: '确认执行' });
+  if (!r) return;
+  const body = { note: r.note || '' };
+  if (r.zone) body.zone = r.zone;
+  try { await api(`/admin/api/reqs/${id}/exec`, { method: 'POST', body: JSON.stringify(body) });
+    toast('已执行 ' + id); loadReqs(); refreshState(); } catch (e) { toast(e.message, false); }
+}
+async function rejectReq(id) {
+  const r = await openModal({ title: '拒绝 ' + id,
+    fields: [{ key: 'note', label: '拒绝理由（AI 可见）', type: 'textarea' }], okText: '确认拒绝', danger: true });
+  if (!r) return;
+  try { await api(`/admin/api/reqs/${id}/reject`, { method: 'POST', body: JSON.stringify({ note: r.note || '' }) });
+    toast('已拒绝 ' + id); loadReqs(); refreshState(); } catch (e) { toast(e.message, false); }
+}
+
+/* ── 日志 ── */
+let logFlat = false;
+function toggleLogFlat() {
+  logFlat = !logFlat;
+  $('logflat').textContent = logFlat ? '按访问方折叠' : '平铺显示';
+  loadLogs();
+}
+async function loadLogs() {
+  const d = await api(`/admin/api/logs?type=${$('log_kind').value}&n=50`);
+  if (!d.lines.length) { $('logbox').innerHTML = '<div class="muted">（空）</div>'; return; }
+  if (logFlat) {
+    $('logbox').innerHTML = `<pre class="logbox">${esc(d.lines.join('\n'))}</pre>`;
+    return;
+  }
+  // 按访问方分组折叠：行格式 hash | 时间 | 访问方 | 内容 | IP
+  const groups = {};
+  for (const line of d.lines) {
+    const parts = line.split(' | ');
+    const who = parts.length >= 4 ? parts[2].trim() : '（未知）';
+    (groups[who] = groups[who] || []).push(line);
+  }
+  const sorted = Object.entries(groups).sort((a, b) => b[1].length - a[1].length);
+  $('logbox').innerHTML = sorted.map(([who, lines]) => `
+    <details class="groupbox">
+      <summary>${esc(who)}（${lines.length} 条）</summary>
+      <pre class="logbox">${esc(lines.join('\n'))}</pre>
+    </details>`).join('');
+  msg('logmsg', `共 ${d.lines.length} 条，${sorted.length} 个访问方`, true);
+}
+async function verifyLogs() {
+  const d = await api('/admin/api/logs/verify');
+  const f = r => r[0] ? `完好（${r[1]} 条）` : `第 ${r[2]} 行断裂！`;
+  const ok = d.ok;
+  msg('logmsg', `access：${f(d.access)} ｜ admin：${f(d.admin)}`, ok);
+  toast(ok ? '哈希链校验完好' : '哈希链断裂，请检查日志！', ok);
+}
+</script>
+</body>
+</html>

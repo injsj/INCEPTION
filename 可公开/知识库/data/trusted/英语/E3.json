@@ -1,0 +1,15 @@
+{
+  "id": "E3",
+  "type": "英语",
+  "zone": "trusted",
+  "title": "be动词与人称搭配",
+  "summary": "我用am你用are，is跟着他她它",
+  "usage": "初一最高频语法点",
+  "experience": "单数 is、复数 are；过去式 was/were",
+  "limitations": "there be 句型 be 跟最近的名词走（就近原则）",
+  "content": "be 动词口诀：我用 am，你用 are，is 跟着他（he）她（she）它（it）；单数 is，复数 are。\n现在时：I am / you、we、they are / he、she、it is。\n过去式：am、is → was；are → were。\n否定：be 后加 not（is not = isn't）；疑问：be 提到句首（Are you…?）。\nThere be 句型表「某地有某物」：There is a book on the desk. There are two books… 就近原则。",
+  "experiences": [],
+  "created_at": "2026-09-23 21:25:13",
+  "updated_at": "2026-09-23 21:25:13",
+  "source": "admin"
+}

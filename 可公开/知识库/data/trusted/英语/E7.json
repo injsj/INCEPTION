@@ -1,0 +1,15 @@
+{
+  "id": "E7",
+  "type": "英语",
+  "zone": "trusted",
+  "title": "常用疑问词",
+  "summary": "what/when/where/who/why/how 一族",
+  "usage": "提问与回答特殊疑问句",
+  "experience": "how many 问可数数量，how much 问不可数或价格",
+  "limitations": "特殊疑问句语序：疑问词 + 一般疑问句",
+  "content": "常用疑问词：\nwhat 什么（事物/职业）；when 什么时候；where 哪里；who 谁（主格）；whom 谁（宾格）；whose 谁的；why 为什么（答语用 because）；which 哪一个；how 怎样（方式/身体）。\nhow 家族：how old 多大（年龄）、how many 多少（可数）、how much 多少/多少钱（不可数/价格）、how often 多久一次（频率）、how long 多长（时间/长度）、how far 多远（距离）。\n语序：What do you like? Where does he live?",
+  "experiences": [],
+  "created_at": "2026-09-23 21:25:13",
+  "updated_at": "2026-09-23 21:25:13",
+  "source": "admin"
+}

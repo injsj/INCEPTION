@@ -1,0 +1,15 @@
+{
+  "id": "E8",
+  "type": "英语",
+  "zone": "trusted",
+  "title": "人称代词与物主代词",
+  "summary": "主格宾格、形容词性名词性物主代词",
+  "usage": "代词替换与填空题直接用表",
+  "experience": "作主语用主格，作宾语用宾格；有名则形，无名则名",
+  "limitations": "its（它的）与 it's（它是）别混",
+  "content": "人称代词主格（作主语）：I you he she it we they。\n宾格（作宾语）：me you him her it us them。\n形容词性物主代词（后面必须跟名词）：my your his her its our their。\n名词性物主代词（后面不跟名词）：mine yours his hers its ours theirs。\n口诀：有名则形（有名词用形容词性），无名则名（没名词用名词性）。This is my pen. = This pen is mine.",
+  "experiences": [],
+  "created_at": "2026-09-23 21:25:13",
+  "updated_at": "2026-09-23 21:25:13",
+  "source": "admin"
+}

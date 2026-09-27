@@ -1,0 +1,15 @@
+{
+  "id": "E1",
+  "type": "英语",
+  "zone": "trusted",
+  "title": "英语字母与音标",
+  "summary": "26个字母、48个音标",
+  "usage": "背单词先会读，音标是发音地图",
+  "experience": "元音字母 a e i o u 发音变化最多",
+  "limitations": "音标辅助记忆，不必一次全背",
+  "content": "二检第二次修改",
+  "experiences": [],
+  "created_at": "2026-09-23 21:25:13",
+  "updated_at": "2026-09-26 19:08:11",
+  "source": "admin"
+}

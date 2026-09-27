@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>知识库管理</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Microsoft YaHei", sans-serif; background: #0f1419; color: #d7dde3; }
+  header { padding: 16px 24px; border-bottom: 1px solid #232b33; display:flex; justify-content:space-between; align-items:center; }
+  header h1 { font-size: 18px; color: #7ec8e0; }
+  main { max-width: 960px; margin: 0 auto; padding: 20px 24px 80px; }
+  details { background: #161d24; border: 1px solid #232b33; border-radius: 10px; margin-bottom: 14px; }
+  summary { cursor: pointer; padding: 13px 16px; font-size: 14.5px; color: #e8eef4; font-weight: 600; }
+  .inner { padding: 4px 16px 16px; }
+  button { background: #2b7ea8; color: #fff; border: 0; border-radius: 6px; padding: 7px 16px; font-size: 13px; cursor: pointer; margin: 2px 4px 2px 0; }
+  button.warn { background: #a85e2b; } button.danger { background: #a83b3b; } button.good { background: #2ea86b; }
+  button:disabled { background: #2a333d; color:#66707a; }
+  input, select, textarea { background: #0f1419; border: 1px solid #2a333d; color: #d7dde3; border-radius: 6px; padding: 7px 10px; font-size: 13px; font-family: inherit; margin: 3px 4px 3px 0; }
+  textarea { width: 100%; min-height: 70px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 8px; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid #1e262e; vertical-align: top; }
+  th { color: #8a94a0; font-weight: 600; }
+  .tag { font-family: Consolas, monospace; color: #7ee0a3; }
+  .muted { color: #8a94a0; font-size: 12px; }
+  .msg { font-size: 13px; margin-top: 8px; } .msg.ok { color: #7ee0a3; } .msg.err { color: #e07e7e; }
+  .keybox { background: #10241a; border: 1px solid #2ea86b; border-radius: 8px; padding: 12px; margin-top: 10px; word-break: break-all; color: #7ee0a3; font-family: Consolas, monospace; }
+  #login { max-width: 420px; margin: 120px auto; background: #161d24; border: 1px solid #232b33; border-radius: 12px; padding: 28px; }
+  #login h2 { margin-bottom: 14px; font-size: 17px; }
+  #login input { width: 100%; margin-bottom: 12px; }
+  #login button { width: 100%; padding: 10px; }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 6px 0; }
+  h4 { font-size: 13.5px; color: #7ec8e0; margin: 12px 0 4px; }
+</style>
+</head>
+<body>
+<div id="login">
+  <h2>知识库管理登录（仅本机）</h2>
+  <input id="ak" type="password" placeholder="管理员密钥（X-Admin-Key）">
+  <button onclick="login()">登录</button>
+  <div id="loginmsg" class="msg err"></div>
+</div>
+
+<div id="panel" style="display:none">
+<header>
+  <h1>知识库管理</h1>
+  <button class="danger" onclick="logout()">退出登录</button>
+</header>
+<main>
+
+<details open><summary>⚙️ 开关与总览</summary><div class="inner">
+  <div class="row">
+    <span>总开关：</span><span id="st_enabled" class="tag"></span>
+    <button onclick="toggle('enabled')">切换</button>
+  </div>
+  <div class="row">
+    <span>对外访问：</span><span id="st_remote" class="tag"></span>
+    <button onclick="toggle('allow_remote')">切换</button>
+    <span class="muted">（重启服务生效）</span>
+  </div>
+  <div class="row">
+    <span>目录公开：</span><span id="st_catalog" class="tag"></span>
+    <button onclick="toggle('catalog_public')">切换</button>
+  </div>
+  <div id="overview" class="muted" style="margin-top:8px"></div>
+</div></details>
+
+<details><summary>🙋 访问申请审批</summary><div class="inner">
+  <button onclick="loadApps()">刷新</button>
+  <div id="apps"></div>
+</div></details>
+
+<details><summary>🔑 密钥与授权</summary><div class="inner">
+  <button onclick="loadKeys()">刷新</button>
+  <div id="keys"></div>
+  <h4>追加授权 / 临时授权 / 收回</h4>
+  <div class="row">
+    <input id="gk_name" placeholder="访问方名称" style="width:120px">
+    <input id="gk_ids" placeholder="标记，逗号分隔（P1,L2）" style="width:200px">
+    <button class="good" onclick="grant()">追加授权</button>
+  </div>
+  <div class="row">
+    <input id="tk_hours" type="number" value="24" style="width:70px"> 小时
+    <button onclick="tempGrant()">对待审核区标记临时授权</button>
+  </div>
+  <div class="row">
+    <button class="warn" onclick="revokeId()">收回上方第一个标记</button>
+    <button class="danger" onclick="revokeKey()">吊销该访问方</button>
+  </div>
+  <div id="keymsg" class="msg"></div>
+</div></details>
+
+<details><summary>📚 类型管理</summary><div class="inner">
+  <div id="types" class="muted"></div>
+  <div class="row">
+    <input id="ty_name" placeholder="类型名（python）">
+    <input id="ty_prefix" placeholder="字母（P）" style="width:80px">
+    <button class="good" onclick="addType()">添加</button>
+  </div>
+  <div id="tymsg" class="msg"></div>
+</div></details>
+
+<details><summary>📖 知识管理</summary><div class="inner">
+  <div class="row">
+    <select id="q_zone" onchange="loadEntries()">
+      <option value="">全部分区</option><option value="trusted">信任区</option>
+      <option value="suspect">存疑区</option><option value="pending">待审核区</option>
+    </select>
+    <button onclick="loadEntries()">刷新列表</button>
+  </div>
+  <div id="entries"></div>
+  <h4>新增知识（普通文本输入，程序自动分配标记）</h4>
+  <div class="row">
+    <select id="ne_zone"><option value="pending">待审核区</option><option value="trusted">信任区</option><option value="suspect">存疑区</option></select>
+    <select id="ne_type"></select>
+  </div>
+  <input id="ne_title" placeholder="标题" style="width:100%"><br>
+  <input id="ne_summary" placeholder="简介（目录公开显示）" style="width:100%"><br>
+  <textarea id="ne_usage" placeholder="详细使用方法"></textarea>
+  <textarea id="ne_experience" placeholder="详细使用经验"></textarea>
+  <textarea id="ne_limitations" placeholder="局限性"></textarea>
+  <textarea id="ne_content" placeholder="正文 / 示例代码（受保护）"></textarea>
+  <button class="good" onclick="createEntry()">入库</button>
+  <div id="nemsg" class="msg"></div>
+  <div id="editArea"></div>
+</div></details>
+
+<details><summary>🤖 AI 申请区（REQ）</summary><div class="inner">
+  <button onclick="loadReqs()">刷新</button>
+  <div class="muted" style="margin:6px 0">「修改知识 / 新增知识」请在 CLI（python admin_cli.py）逐字段确认后执行；移区与追加经验可在此一键执行。</div>
+  <div id="reqs"></div>
+</div></details>
+
+<details><summary>📜 日志</summary><div class="inner">
+  <div class="row">
+    <select id="log_kind"><option value="access">access（调用）</option><option value="admin">admin（管理）</option></select>
+    <button onclick="loadLogs()">查看最近 50 条</button>
+    <button onclick="verifyLogs()">校验哈希链</button>
+    <button onclick="toggleLogFlat()" id="logflat">平铺显示</button>
+  </div>
+  <div id="logmsg" class="msg"></div>
+  <div id="logbox" style="margin-top:8px"></div>
+</div></details>
+
+</main>
+</div>
+
+<script>
+let AK = sessionStorage.getItem('ak') || '';
+const $ = id => document.getElementById(id);
+const esc = s => { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; };
+const msg = (id, t, ok) => { const e = $(id); e.className = 'msg ' + (ok ? 'ok' : 'err'); e.textContent = t; };
+
+async function api(path, opts = {}) {
+  opts.headers = Object.assign({ 'X-Admin-Key': AK, 'Content-Type': 'application/json' }, opts.headers || {});
+  const r = await fetch(path, opts);
+  if (r.status === 401) { logout(); throw new Error('登录失效'); }
+  if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.detail || ('错误 ' + r.status)); }
+  return r.json();
+}
+
+function login() {
+  AK = $('ak').value.trim();
+  api('/admin/api/state').then(() => {
+    sessionStorage.setItem('ak', AK);
+    $('login').style.display = 'none'; $('panel').style.display = 'block';
+    init();
+  }).catch(e => { $('loginmsg').textContent = e.message; });
+}
+function logout() { sessionStorage.removeItem('ak'); AK = ''; location.reload(); }
+if (AK) { $('ak').value = AK; login(); }
+
+async function init() { await refreshState(); await loadTypes(); await loadEntries(); }
+const ZONE = { trusted: '信任区', suspect: '存疑区', pending: '待审核区' };
+
+async function refreshState() {
+  const s = await api('/admin/api/state');
+  $('st_enabled').textContent = s.enabled ? '开' : '关（禁止一切访问）';
+  $('st_remote').textContent = s.allow_remote ? '开' : '关（仅本机）';
+  $('st_catalog').textContent = s.catalog_public ? '公开' : '隐藏';
+  const o = await api('/admin/api/overview');
+  $('overview').textContent = `知识：信任区 ${o.counts.trusted}｜存疑区 ${o.counts.suspect}｜待审核区 ${o.counts.pending}｜待审访问申请 ${o.applications_pending}｜待审 AI 申请 ${o.reqs_pending}`;
+}
+async function toggle(k) {
+  const cur = (k === 'enabled' ? $('st_enabled') : k === 'allow_remote' ? $('st_remote') : $('st_catalog')).textContent;
+  const body = {}; body[k] = !(cur.startsWith('开') || cur.startsWith('公开'));
+  try { const r = await api('/admin/api/state', { method: 'POST', body: JSON.stringify(body) }); refreshState();
+    if (r.note) alert(r.note); } catch (e) { alert(e.message); }
+}
+
+async function loadApps() {
+  const d = await api('/admin/api/applications');
+  const pend = d.applications.filter(a => a.status === '待审');
+  if (!pend.length) { $('apps').innerHTML = '<div class="muted">没有待审申请</div>'; return; }
+  $('apps').innerHTML = '<table><tr><th>#</th><th>自报名称</th><th>申请标记</th><th>理由</th><th>时间</th><th>操作</th></tr>' +
+    pend.map(a => `<tr><td>${a.n}</td><td>${esc(a.self_name)}</td><td class="tag">${a.ids.join(', ')}</td>
+      <td>${esc(a.reason)}</td><td class="muted">${a.time}</td>
+      <td><button class="good" onclick="approveApp(${a.n})">批准</button>
+      <button class="danger" onclick="rejectApp(${a.n})">拒绝</button></td></tr>`).join('') + '</table>';
+}
+async function approveApp(n) {
+  const name = prompt('为该访问方指定固定名称（唯一）：'); if (!name) return;
+  try {
+    const d = await api(`/admin/api/applications/${n}/approve`, { method: 'POST', body: JSON.stringify({ name }) });
+    $('apps').innerHTML += `<div class="keybox">✅ 已批准「${esc(d.name)}」。密钥仅此一次显示，立即复制转交：<br>${d.key}</div>`;
+    refreshState();
+  } catch (e) { alert(e.message); }
+}
+async function rejectApp(n) {
+  const note = prompt('拒绝原因：') || '';
+  try { await api(`/admin/api/applications/${n}/reject`, { method: 'POST', body: JSON.stringify({ note }) }); loadApps(); refreshState(); }
+  catch (e) { alert(e.message); }
+}
+
+async function loadKeys() {
+  const d = await api('/admin/api/keys');
+  $('keys').innerHTML = '<table><tr><th>名称</th><th>角色</th><th>授权标记</th><th>临时授权</th></tr>' +
+    d.keys.map(k => `<tr><td>${esc(k.name)}</td><td>${k.role_name}</td><td class="tag">${k.granted_ids.join(', ') || '（无）'}</td>
+      <td class="muted">${Object.entries(k.temp).map(([i, e]) => i + ' 至 ' + e).join('；') || '（无）'}</td></tr>`).join('') + '</table>';
+}
+async function grant() {
+  try { const d = await api('/admin/api/keys/grant', { method: 'POST', body: JSON.stringify({ name: $('gk_name').value.trim(), ids: $('gk_ids').value.split(',').map(s => s.trim().toUpperCase()).filter(Boolean) }) });
+    msg('keymsg', '已授权：' + d.granted.join(',') + (d.warnings.length ? '；注意：' + d.warnings.join('；') : ''), true); loadKeys();
+  } catch (e) { msg('keymsg', e.message, false); }
+}
+async function tempGrant() {
+  const ids = $('gk_ids').value.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+  try { await api('/admin/api/keys/temp', { method: 'POST', body: JSON.stringify({ name: $('gk_name').value.trim(), id: ids[0], hours: +$('tk_hours').value }) });
+    msg('keymsg', '已临时授权（仅对待审核区标记有效）', true); loadKeys();
+  } catch (e) { msg('keymsg', e.message, false); }
+}
+async function revokeId() {
+  const ids = $('gk_ids').value.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+  try { await api('/admin/api/keys/revoke-id', { method: 'POST', body: JSON.stringify({ name: $('gk_name').value.trim(), id: ids[0] }) });
+    msg('keymsg', '已收回（≤1 秒生效）', true); loadKeys();
+  } catch (e) { msg('keymsg', e.message, false); }
+}
+async function revokeKey() {
+  if (!confirm('确认吊销该访问方？其密钥立即失效。')) return;
+  try { await api('/admin/api/keys/revoke', { method: 'POST', body: JSON.stringify({ name: $('gk_name').value.trim() }) });
+    msg('keymsg', '已吊销', true); loadKeys();
+  } catch (e) { msg('keymsg', e.message, false); }
+}
+
+async function loadTypes() {
+  const d = await api('/admin/api/types');
+  $('types').textContent = '现有类型：' + (d.types.map(t => `${t.prefix} → ${t.name}`).join('，') || '（无，请先添加）');
+  // 第二轮审查 L7：类型名进 HTML 前统一转义（含属性值的双引号）
+  const escq = s => esc(s).replace(/"/g, '&quot;');
+  $('ne_type').innerHTML = d.types.map(t => `<option value="${escq(t.name)}">${esc(t.name)}（${esc(t.prefix)}）</option>`).join('');
+}
+async function addType() {
+  try { await api('/admin/api/types', { method: 'POST', body: JSON.stringify({ name: $('ty_name').value.trim(), prefix: $('ty_prefix').value.trim() }) });
+    msg('tymsg', '已添加', true); loadTypes();
+  } catch (e) { msg('tymsg', e.message, false); }
+}
+
+async function loadEntries() {
+  const z = $('q_zone').value;
+  const d = await api('/admin/api/entries' + (z ? '?zone=' + z : ''));
+  $('entries').innerHTML = '<table><tr><th>标记</th><th>分区</th><th>标题</th><th>类型</th><th>操作</th></tr>' +
+    d.entries.map(e => `<tr><td class="tag">${e.id}</td><td>${ZONE[e.zone]}</td><td>${esc(e.title)}</td><td>${e.type}</td>
+      <td><button onclick="editEntry('${e.id}')">编辑</button>
+      <button onclick="moveEntry('${e.id}')">移区</button>
+      <button class="danger" onclick="delEntry('${e.id}')">废弃</button></td></tr>`).join('') + '</table>';
+}
+async function createEntry() {
+  try {
+    const d = await api('/admin/api/entries', { method: 'POST', body: JSON.stringify({
+      zone: $('ne_zone').value, type: $('ne_type').value,
+      title: $('ne_title').value, summary: $('ne_summary').value,
+      usage: $('ne_usage').value, experience: $('ne_experience').value,
+      limitations: $('ne_limitations').value, content: $('ne_content').value }) });
+    msg('nemsg', '已入库：' + d.id, true);
+    ['ne_title','ne_summary','ne_usage','ne_experience','ne_limitations','ne_content'].forEach(i => $(i).value = '');
+    loadEntries(); refreshState();
+  } catch (e) { msg('nemsg', e.message, false); }
+}
+async function editEntry(id) {
+  const d = await api('/admin/api/entries/' + id);
+  const e = d.entry;
+  $('editArea').innerHTML = `<h4>编辑 ${id}（历史版本 ${d.history.length} 个）</h4>
+    <input id="ee_title" value="${esc(e.title).replace(/"/g,'&quot;')}" style="width:100%">
+    <textarea id="ee_summary">${esc(e.summary)}</textarea>
+    <textarea id="ee_usage">${esc(e.usage)}</textarea>
+    <textarea id="ee_experience">${esc(e.experience)}</textarea>
+    <textarea id="ee_limitations">${esc(e.limitations)}</textarea>
+    <textarea id="ee_content">${esc(e.content)}</textarea>
+    <button class="good" onclick="saveEntry('${id}')">保存修改</button>
+    ${d.history.length ? `<button onclick="rollbackEntry('${id}','${d.history[0]}')">回滚到最近历史版本</button>` : ''}`;
+  $('editArea').scrollIntoView();
+}
+async function saveEntry(id) {
+  try {
+    await api('/admin/api/entries/' + id, { method: 'PUT', body: JSON.stringify({
+      title: $('ee_title').value, summary: $('ee_summary').value, usage: $('ee_usage').value,
+      experience: $('ee_experience').value, limitations: $('ee_limitations').value, content: $('ee_content').value }) });
+    alert('已保存'); loadEntries();
+  } catch (e) { alert(e.message); }
+}
+async function moveEntry(id) {
+  const zone = prompt('目标分区：trusted（信任区）/ suspect（存疑区）/ pending（待审核区）');
+  if (!zone) return;
+  const note = prompt('说明（可空）：') || '';
+  try { await api(`/admin/api/entries/${id}/move`, { method: 'POST', body: JSON.stringify({ zone, note }) }); loadEntries(); refreshState(); }
+  catch (e) { alert(e.message); }
+}
+async function delEntry(id) {
+  if (!confirm('确认废弃 ' + id + '？序号不会回收。')) return;
+  const reason = prompt('废弃原因：') || '';
+  try { await api('/admin/api/entries/' + id, { method: 'DELETE', body: JSON.stringify({ reason }) }); loadEntries(); refreshState(); }
+  catch (e) { alert(e.message); }
+}
+async function rollbackEntry(id, ver) {
+  if (!confirm('回滚到 ' + ver + '？当前内容会先备份。')) return;
+  try { await api(`/admin/api/entries/${id}/rollback`, { method: 'POST', body: JSON.stringify({ version: ver }) }); alert('已回滚'); }
+  catch (e) { alert(e.message); }
+}
+
+function reqCard(r) {
+  const pending = r.status === '待审核';
+  return `
+    <div style="border:1px solid #232b33;border-radius:8px;padding:10px;margin:8px 0">
+      <b class="tag">${r.id}</b> [${r.action_name}] ${esc(r.proposer)} → ${r.target || '（新增）'}
+      <span class="muted">${r.created_at}</span>
+      <span class="tag">${esc(r.status)}</span>
+      ${r.admin_note ? `<span class="muted">意见：${esc(r.admin_note)}</span>` : ''}
+      <div style="margin:6px 0;font-size:12.5px;white-space:pre-wrap">${esc(r.proposal)}</div>
+      <details><summary class="muted">理由与证明过程</summary>
+        <div style="font-size:12.5px;white-space:pre-wrap;margin:6px 0"><b>理由：</b>${esc(r.reason)}\n\n<b>证明：</b>${esc(r.proof)}</div>
+      </details>
+      ${pending ? `<div class="row">
+        ${['move_zone','suspect_to_pending','append_experience'].includes(r.action) ?
+          `<button class="good" onclick="execReq('${r.id}')">一键执行</button>` :
+          `<span class="muted">此类型请用 CLI 逐字段确认</span>`}
+        <button class="danger" onclick="rejectReq('${r.id}')">拒绝</button>
+      </div>` : ''}
+    </div>`;
+}
+
+async function loadReqs() {
+  const d = await api('/admin/api/reqs');
+  if (!d.reqs.length) { $('reqs').innerHTML = '<div class="muted">还没有申请记录</div>'; return; }
+  // 按申请人分组折叠：有待审的组自动展开
+  const groups = {};
+  for (const r of d.reqs) (groups[r.proposer] = groups[r.proposer] || []).push(r);
+  const sorted = Object.entries(groups).sort((a, b) => {
+    const pa = a[1].some(r => r.status === '待审核') ? 0 : 1;
+    const pb = b[1].some(r => r.status === '待审核') ? 0 : 1;
+    return pa - pb || b[1].length - a[1].length;
+  });
+  $('reqs').innerHTML = sorted.map(([who, rs]) => {
+    const pend = rs.filter(r => r.status === '待审核').length;
+    return `
+    <details ${pend ? 'open' : ''} style="border:1px solid #232b33;border-radius:8px;margin:8px 0">
+      <summary style="padding:8px 10px;cursor:pointer">🤖 ${esc(who)}（共 ${rs.length} 条${pend ? `｜待审 ${pend} 条` : ''}）</summary>
+      <div style="padding:0 10px 6px">${rs.map(reqCard).join('')}</div>
+    </details>`;
+  }).join('');
+}
+async function execReq(id) {
+  let body = {};
+  if (confirm('如果是「建议移区」，请在确定后输入目标分区')) {
+    const zone = prompt('目标分区 trusted/suspect（仅 move_zone 需要，其他可空）：');
+    if (zone) body.zone = zone;
+  }
+  body.note = prompt('处理意见（AI 可见，可空）：') || '';
+  try { await api(`/admin/api/reqs/${id}/exec`, { method: 'POST', body: JSON.stringify(body) }); loadReqs(); refreshState(); }
+  catch (e) { alert(e.message); }
+}
+async function rejectReq(id) {
+  const note = prompt('拒绝理由（AI 可见）：') || '';
+  try { await api(`/admin/api/reqs/${id}/reject`, { method: 'POST', body: JSON.stringify({ note }) }); loadReqs(); }
+  catch (e) { alert(e.message); }
+}
+
+let logFlat = false;
+function toggleLogFlat() {
+  logFlat = !logFlat;
+  $('logflat').textContent = logFlat ? '按访问方折叠' : '平铺显示';
+  loadLogs();
+}
+async function loadLogs() {
+  const d = await api(`/admin/api/logs?type=${$('log_kind').value}&n=50`);
+  if (!d.lines.length) { $('logbox').innerHTML = '<div class="muted">（空）</div>'; return; }
+  const preStyle = 'font-size:11.5px;white-space:pre-wrap;word-break:break-all;background:#0c1116;padding:10px;border-radius:8px;max-height:300px;overflow:auto;margin:6px 0';
+  if (logFlat) {
+    $('logbox').innerHTML = `<pre style="${preStyle}">${esc(d.lines.join('\n'))}</pre>`;
+    return;
+  }
+  // 按访问方分组折叠：行格式 hash | 时间 | 访问方 | 内容 | IP
+  const groups = {};
+  for (const line of d.lines) {
+    const parts = line.split(' | ');
+    const who = parts.length >= 4 ? parts[2].trim() : '（未知）';
+    (groups[who] = groups[who] || []).push(line);
+  }
+  const sorted = Object.entries(groups).sort((a, b) => b[1].length - a[1].length);
+  $('logbox').innerHTML = sorted.map(([who, lines]) => `
+    <details style="border:1px solid #232b33;border-radius:8px;margin:6px 0">
+      <summary style="padding:8px 10px;cursor:pointer">👤 ${esc(who)}（${lines.length} 条）</summary>
+      <pre style="${preStyle}">${esc(lines.join('\n'))}</pre>
+    </details>`).join('');
+  msg('logmsg', `共 ${d.lines.length} 条，${sorted.length} 个访问方`, true);
+}
+async function verifyLogs() {
+  const d = await api('/admin/api/logs/verify');
+  const f = r => r[0] ? `完好（${r[1]} 条）` : `第 ${r[2]} 行断裂！`;
+  msg('logmsg', `access：${f(d.access)} ｜ admin：${f(d.admin)}`, d.ok);
+}
+</script>
+</body>
+</html>

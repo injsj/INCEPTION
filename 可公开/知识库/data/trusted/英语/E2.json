@@ -1,0 +1,15 @@
+{
+  "id": "E2",
+  "type": "英语",
+  "zone": "trusted",
+  "title": "名词单复数",
+  "summary": "可数名词有单复数，不可数没有",
+  "usage": "造句先想这个名词可不可数",
+  "experience": "以 s/x/ch/sh 结尾加 es；辅音+y 变 i 加 es",
+  "limitations": "不规则变化要单记：child→children，foot→feet",
+  "content": "可数名词复数规则：\n1. 一般加 s：book→books。\n2. 以 s、x、ch、sh 结尾加 es：bus→buses，watch→watches。\n3. 辅音字母+y 结尾：y 变 i 加 es：baby→babies（元音+y 直接加 s：boy→boys）。\n4. 以 f/fe 结尾：变 ves：knife→knives，leaf→leaves。\n5. 以 o 结尾：有生命加 es（tomato→tomatoes），无生命加 s（photo→photos）。\n不规则：man→men，woman→women，child→children，foot→feet，tooth→teeth，sheep→sheep（不变）。\n不可数名词（water、milk、bread、information）没有复数，不与 a/an 连用。",
+  "experiences": [],
+  "created_at": "2026-09-23 21:25:13",
+  "updated_at": "2026-09-23 21:25:13",
+  "source": "admin"
+}
