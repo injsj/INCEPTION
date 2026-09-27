@@ -216,3 +216,19 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ── cangku 安全边界（密钥与运行产物绝不入库）──
+# ── 环境与运行产物（可再生，不入库）──
+.venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+server.log
+nul
+
+# ── 密钥与安全（绝不入库）──
+AI/state/ai_key.txt
+知识库/meta/keys.json
+
+# ── 每日快照（本地保留，git 不跟踪二进制积压）──
+备份/
